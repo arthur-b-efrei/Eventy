@@ -95,9 +95,7 @@ export default function Inscription() {
             max={DATE_MAX}
             autoComplete="bday"
             required
-          />
-          <span className="aide">Eventy est réservé aux {AGE_MINIMUM} ans et plus.</span>
-        </div>
+          />        </div>
 
         <ChampMotDePasse
           id="password"
