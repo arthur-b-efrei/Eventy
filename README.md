@@ -6,15 +6,19 @@ Appli pour créer des events (soirée au bar, sortie…) et y participer pour re
 
 ```
 Eventy/
-├── frontend/          → l'appli React + Vite (TypeScript)
+├── frontend/          → l'appli React + Vite (JavaScript / JSX)
 │   └── src/
 └── backend/           → l'API Node.js + Express
     ├── .env.example   → modèle du fichier .env
     └── src/
         ├── server.js  → démarre le serveur
-        ├── app.js     → configuration d'Express
+        ├── app.js     → configuration d'Express, branche les routes
         ├── config/
         │   └── db.js  → connexion à MongoDB
+        ├── routes/        → les adresses de l'API (ex : /api/auth/login)
+        ├── controllers/   → ce que fait chaque route
+        ├── middleware/
+        │   └── auth.js    → vérifie le token JWT (routes protégées)
         └── models/    → schémas Mongoose
             ├── User.js
             ├── Event.js
@@ -42,6 +46,16 @@ cd frontend
 npm install
 npm run dev
 ```
+
+## Routes de l'API
+
+| Méthode | Adresse | Rôle | Token ? |
+|---|---|---|---|
+| POST | `/api/auth/register` | Inscription (name, email, password, date_naissance) | non |
+| POST | `/api/auth/login` | Connexion (email, password) → renvoie `token` + `user` | non |
+| GET | `/api/auth/me` | Infos du user connecté | oui |
+
+Pour les routes protégées, le front envoie l'en-tête `Authorization: Bearer <token>`.
 
 ## Base de données (MongoDB)
 

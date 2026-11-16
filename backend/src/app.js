@@ -1,5 +1,6 @@
 import express from "express";
 import cors from "cors";
+import authRoutes from "./routes/authRoutes.js";
 
 const app = express();
 
@@ -13,6 +14,9 @@ app.get("/api/health", (req, res) => {
   res.json({ status: "ok" });
 });
 
-// Les routes (auth, events, réservations, profil) seront branchées ici.
+// Inscription / connexion
+app.use("/api/auth", authRoutes);
+
+// Les autres routes (events, réservations, profil) seront branchées ici.
 
 export default app;
