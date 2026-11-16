@@ -16,6 +16,8 @@ const userSchema = new mongoose.Schema(
     password: { type: String, required: true },
     date_naissance: { type: Date, required: true },
     role: { type: String, enum: ["user", "admin"], default: "user" },
+    // Passe à true quand le user a saisi le code reçu par email
+    email_verifie: { type: Boolean, default: false },
   },
   {
     // Ajoute createdAt (date de création) et updatedAt tout seul

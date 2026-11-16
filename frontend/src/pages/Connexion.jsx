@@ -22,6 +22,11 @@ export default function Connexion() {
       login(session)
       navigate('/accueil')
     } catch (err) {
+      // Bon mot de passe mais email pas encore vérifié : un code vient d'être envoyé
+      if (err.donnees?.code === 'EMAIL_NON_VERIFIE') {
+        navigate('/verification', { state: { email: err.donnees.email } })
+        return
+      }
       setErreur(err.message)
     } finally {
       setChargement(false)

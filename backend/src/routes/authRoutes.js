@@ -1,11 +1,37 @@
 import { Router } from "express";
-import { register, login, me } from "../controllers/authController.js";
+import rateLimit from "express-rate-limit";
+import {
+  register,
+  login,
+  me,
+  verifyEmail,
+  resendCode,
+} from "../controllers/authController.js";
 import protect from "../middleware/auth.js";
 
 const router = Router();
 
-router.post("/register", register); // inscription
-router.post("/login", login); // connexion
+// Limites par adresse IP pour bloquer les robots (essais de mots de passe ou de codes en masse)
+const limiteAuth = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  limit: 30,
+  standardHeaders: "draft-8",
+  legacyHeaders: false,
+  message: { message: "Trop de tentatives, réessaie dans quelques minutes." },
+});
+
+const limiteEnvoiEmail = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 heure
+  limit: 10,
+  standardHeaders: "draft-8",
+  legacyHeaders: false,
+  message: { message: "Trop d'emails demandés, réessaie plus tard." },
+});
+
+router.post("/register", limiteEnvoiEmail, register); // inscription + envoi du code
+router.post("/verify-email", limiteAuth, verifyEmail); // saisie du code reçu par email
+router.post("/resend-code", limiteEnvoiEmail, resendCode); // renvoyer un code
+router.post("/login", limiteAuth, login); // connexion
 router.get("/me", protect, me); // infos du user connecté
 
 export default router;

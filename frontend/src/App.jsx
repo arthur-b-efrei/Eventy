@@ -5,6 +5,7 @@ import Landing from './pages/Landing.jsx'
 import Connexion from './pages/Connexion.jsx'
 import Inscription from './pages/Inscription.jsx'
 import Accueil from './pages/Accueil.jsx'
+import Verification from './pages/Verification.jsx'
 
 // Page réservée aux users connectés : sinon, retour à la landing page
 function RouteConnectee({ children }) {
@@ -26,6 +27,7 @@ export default function App() {
           <Route path="/" element={<Landing />} />
           <Route path="/connexion" element={<RouteVisiteur><Connexion /></RouteVisiteur>} />
           <Route path="/inscription" element={<RouteVisiteur><Inscription /></RouteVisiteur>} />
+          <Route path="/verification" element={<RouteVisiteur><Verification /></RouteVisiteur>} />
           <Route path="/accueil" element={<RouteConnectee><Accueil /></RouteConnectee>} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

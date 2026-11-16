@@ -4,6 +4,10 @@ import authRoutes from "./routes/authRoutes.js";
 
 const app = express();
 
+// En production, l'appli tourne derrière le proxy de l'hébergeur :
+// sans ça, toutes les requêtes auraient la même IP et la limite anti-robots bloquerait tout le monde.
+app.set("trust proxy", 1);
+
 // Autorise le front (Vite) à appeler l'API
 app.use(cors());
 // Permet de lire le JSON envoyé dans le corps des requêtes

@@ -3,7 +3,6 @@ import { Link, useNavigate } from 'react-router-dom'
 import AuthLayout from '../components/AuthLayout.jsx'
 import ChampMotDePasse from '../components/ChampMotDePasse.jsx'
 import { inscrire } from '../api/auth.js'
-import { useAuth } from '../context/AuthContext.js'
 
 // Date du jour au format AAAA-MM-JJ, pour empêcher une date de naissance dans le futur
 const AUJOURDHUI = new Date().toISOString().slice(0, 10)
@@ -12,7 +11,6 @@ export default function Inscription() {
   const [form, setForm] = useState({ name: '', email: '', date_naissance: '', password: '' })
   const [erreur, setErreur] = useState('')
   const [chargement, setChargement] = useState(false)
-  const { login } = useAuth()
   const navigate = useNavigate()
 
   // Un seul handler pour tous les champs : on se sert de l'attribut name
@@ -31,10 +29,9 @@ export default function Inscription() {
 
     setChargement(true)
     try {
-      // L'API renvoie directement un token : on est connecté après l'inscription
-      const session = await inscrire(form)
-      login(session)
-      navigate('/accueil')
+      // Le compte est créé et un code part par email : on passe à la page de vérification
+      const { email } = await inscrire(form)
+      navigate('/verification', { state: { email } })
     } catch (err) {
       setErreur(err.message)
     } finally {
