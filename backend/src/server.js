@@ -9,4 +9,10 @@ await connectDB();
 
 app.listen(PORT, () => {
   console.log(`Serveur lancé sur http://localhost:${PORT}`);
+  // Dit tout de suite si les emails partent vraiment ou s'ils s'affichent seulement ici
+  console.log(
+    process.env.BREVO_API_KEY
+      ? `Emails : envoi réel via Brevo (expéditeur ${process.env.MAIL_FROM_EMAIL})`
+      : "Emails : mode dev, pas d'envoi réel (les codes s'affichent dans ce terminal)"
+  );
 });
