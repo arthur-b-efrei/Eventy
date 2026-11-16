@@ -18,7 +18,8 @@ Eventy/
         └── models/    → schémas Mongoose
             ├── User.js
             ├── Event.js
-            └── Log.js → les réservations
+            ├── Reservation.js → qui participe à quel event
+            └── Log.js         → historique des actions
 ```
 
 ## Lancer le projet
@@ -46,4 +47,5 @@ npm run dev
 
 - **User** : name, email, password (crypté), date_naissance, role, date de création
 - **Event** : titre, describe, nb_user, nb_max_user, id_creator, localisation, date_event
-- **Log** (réservation) : describe, id_event, id_user
+- **Reservation** : id_user, id_event, describe (message du participant), date d'inscription
+- **Log** (historique) : describe (l'action), id_event, id_user, date

@@ -1,10 +1,12 @@
 import mongoose from "mongoose";
 
-// Une réservation : "tel user participe à tel event".
+// L'historique de ce qui se passe dans l'appli.
+// Une ligne = une action (ex : "inscription à l'event", "désinscription",
+// "création de l'event"). Les participations, elles, sont dans Reservation.
 const logSchema = new mongoose.Schema(
   {
-    // Petit message du participant (ex : "j'arrive vers 21h")
-    describe: { type: String, default: "" },
+    // Ce qui s'est passé
+    describe: { type: String, required: true },
     id_event: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Event",
@@ -16,10 +18,10 @@ const logSchema = new mongoose.Schema(
       required: true,
     },
   },
-  { timestamps: true }
+  {
+    // createdAt = date de l'action
+    timestamps: true,
+  }
 );
-
-// Un user ne peut pas s'inscrire deux fois au même event
-logSchema.index({ id_event: 1, id_user: 1 }, { unique: true });
 
 export default mongoose.model("Log", logSchema);
