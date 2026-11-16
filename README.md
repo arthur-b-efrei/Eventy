@@ -8,6 +8,12 @@ Appli pour créer des events (soirée au bar, sortie…) et y participer pour re
 Eventy/
 ├── frontend/          → l'appli React + Vite (JavaScript / JSX)
 │   └── src/
+│       ├── App.jsx        → les routes (/, /connexion, /inscription, /accueil)
+│       ├── index.css      → couleurs, polices et boutons de la marque
+│       ├── api/           → appels à l'API backend
+│       ├── context/       → user connecté + token (AuthProvider, useAuth)
+│       ├── components/    → Logo, LogoAnime, AuthLayout…
+│       └── pages/         → Landing, Connexion, Inscription, Accueil
 └── backend/           → l'API Node.js + Express
     ├── .env.example   → modèle du fichier .env
     └── src/
@@ -46,6 +52,9 @@ cd frontend
 npm install
 npm run dev
 ```
+
+Le front tourne sur http://localhost:5173 et appelle l'API sur http://localhost:5000/api
+(modifiable avec `VITE_API_URL` dans `frontend/.env`, voir `.env.example`).
 
 ## Routes de l'API
 
