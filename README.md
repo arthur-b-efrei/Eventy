@@ -65,8 +65,17 @@ Le front tourne sur http://localhost:5173 et appelle l'API sur http://localhost:
 | POST | `/api/auth/resend-code` | Renvoie un code (email), 1 fois par minute max | non |
 | POST | `/api/auth/login` | Connexion (email, password) → renvoie `token` + `user`, ou 403 `EMAIL_NON_VERIFIE` | non |
 | GET | `/api/auth/me` | Infos du user connecté | oui |
+| PUT | `/api/users/me/avatar` | Envoie sa photo de profil (`image` en data URL JPEG/PNG/WebP, 500 Ko max) | oui |
+| DELETE | `/api/users/me/avatar` | Supprime sa photo, retour à l'emoji | oui |
+| GET | `/api/users/:id/avatar` | Affiche la photo d'un user (mise en cache 1 an, l'URL change à chaque nouvelle photo) | non |
 
 Pour les routes protégées, le front envoie l'en-tête `Authorization: Bearer <token>`.
+
+## Avatar et photo de profil
+
+- À l'inscription, chaque user reçoit un **avatar emoji** tiré au hasard sur un rond aux couleurs de la marque, comme les avatars par défaut de Discord.
+- Juste après la vérification du code, la page `/bienvenue` propose d'ajouter une photo, ou de passer et de garder l'emoji.
+- La photo est recadrée en carré et réduite à 256 × 256 **dans le navigateur** (environ 20 à 40 Ko), puis rangée dans MongoDB (collection `photoprofils`). Le serveur vérifie que c'est une vraie image en lisant ses premiers octets.
 
 ## Vérification de l'email (code OTP)
 
@@ -82,6 +91,8 @@ Pour les routes protégées, le front envoie l'en-tête `Authorization: Bearer <
 
 - **User** : name, email, password (crypté), date_naissance, role, email_verifie, date de création
 - **CodeVerification** : id_user, code_hash, tentatives, expire_le
+- **PhotoProfil** : id_user, type, data (l'image)
+- User.avatar : emoji, couleur, photo_version
 - **Event** : titre, describe, nb_user, nb_max_user, id_creator, localisation, date_event
 - **Reservation** : id_user, id_event, describe (message du participant), date d'inscription
 - **Log** (historique) : describe (l'action), id_event, id_user, date

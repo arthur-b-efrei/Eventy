@@ -36,7 +36,8 @@ export default function Verification() {
     try {
       const session = await verifierEmail({ email, code: codeAVerifier })
       login(session)
-      navigate('/accueil')
+      // Compte tout neuf : on propose d'ajouter une photo de profil
+      navigate('/bienvenue')
     } catch (err) {
       setErreur(err.message)
       setCode('')

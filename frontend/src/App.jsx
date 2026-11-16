@@ -6,6 +6,7 @@ import Connexion from './pages/Connexion.jsx'
 import Inscription from './pages/Inscription.jsx'
 import Accueil from './pages/Accueil.jsx'
 import Verification from './pages/Verification.jsx'
+import Bienvenue from './pages/Bienvenue.jsx'
 
 // Page réservée aux users connectés : sinon, retour à la landing page
 function RouteConnectee({ children }) {
@@ -14,9 +15,10 @@ function RouteConnectee({ children }) {
 }
 
 // Page réservée aux visiteurs : si on est déjà connecté, direction l'accueil
-function RouteVisiteur({ children }) {
+// (ou une autre page avec "redirection", ex : /bienvenue juste après la vérification du code)
+function RouteVisiteur({ children, redirection = '/accueil' }) {
   const { token } = useAuth()
-  return token ? <Navigate to="/accueil" replace /> : children
+  return token ? <Navigate to={redirection} replace /> : children
 }
 
 export default function App() {
@@ -27,7 +29,8 @@ export default function App() {
           <Route path="/" element={<Landing />} />
           <Route path="/connexion" element={<RouteVisiteur><Connexion /></RouteVisiteur>} />
           <Route path="/inscription" element={<RouteVisiteur><Inscription /></RouteVisiteur>} />
-          <Route path="/verification" element={<RouteVisiteur><Verification /></RouteVisiteur>} />
+          <Route path="/verification" element={<RouteVisiteur redirection="/bienvenue"><Verification /></RouteVisiteur>} />
+          <Route path="/bienvenue" element={<RouteConnectee><Bienvenue /></RouteConnectee>} />
           <Route path="/accueil" element={<RouteConnectee><Accueil /></RouteConnectee>} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

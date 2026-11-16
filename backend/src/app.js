@@ -1,6 +1,7 @@
 import express from "express";
 import cors from "cors";
 import authRoutes from "./routes/authRoutes.js";
+import userRoutes from "./routes/userRoutes.js";
 
 const app = express();
 
@@ -11,7 +12,8 @@ app.set("trust proxy", 1);
 // Autorise le front (Vite) à appeler l'API
 app.use(cors());
 // Permet de lire le JSON envoyé dans le corps des requêtes
-app.use(express.json());
+// (1 Mo max : assez pour une photo de profil déjà réduite par le navigateur)
+app.use(express.json({ limit: "1mb" }));
 
 // Route de test : http://localhost:5000/api/health
 app.get("/api/health", (req, res) => {
@@ -21,6 +23,9 @@ app.get("/api/health", (req, res) => {
 // Inscription / connexion
 app.use("/api/auth", authRoutes);
 
-// Les autres routes (events, réservations, profil) seront branchées ici.
+// Profil des users (photo de profil)
+app.use("/api/users", userRoutes);
+
+// Les autres routes (events, réservations) seront branchées ici.
 
 export default app;

@@ -31,8 +31,14 @@ export default function AuthProvider({ children }) {
     setSession({ token: null, user: null })
   }
 
+  // Met à jour les infos du user connecté (ex : après un changement de photo)
+  function majUser(user) {
+    localStorage.setItem(CLE_USER, JSON.stringify(user))
+    setSession((s) => ({ ...s, user }))
+  }
+
   return (
-    <AuthContext.Provider value={{ ...session, login, logout }}>
+    <AuthContext.Provider value={{ ...session, login, logout, majUser }}>
       {children}
     </AuthContext.Provider>
   )
