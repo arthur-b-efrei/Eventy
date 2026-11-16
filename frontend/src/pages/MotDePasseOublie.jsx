@@ -1,0 +1,171 @@
+import { useEffect, useState } from 'react'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
+import AuthLayout from '../components/AuthLayout.jsx'
+import ChampCode from '../components/ChampCode.jsx'
+import ChampMotDePasse from '../components/ChampMotDePasse.jsx'
+import { changerMotDePasse, demanderNouveauMotDePasse } from '../api/auth.js'
+import { useAuth } from '../context/AuthContext.js'
+
+const DELAI_RENVOI = 60 // secondes avant de pouvoir redemander un code
+
+// Deux étapes : 1. on donne son email, 2. on tape le code reçu et on choisit un nouveau mot de passe
+export default function MotDePasseOublie() {
+  const location = useLocation()
+  const navigate = useNavigate()
+  const { login } = useAuth()
+
+  const [etape, setEtape] = useState('email')
+  const [email, setEmail] = useState(location.state?.email || '')
+  const [code, setCode] = useState('')
+  const [password, setPassword] = useState('')
+  const [erreur, setErreur] = useState('')
+  const [info, setInfo] = useState('')
+  const [chargement, setChargement] = useState(false)
+  const [attente, setAttente] = useState(0)
+
+  // Compte à rebours avant de pouvoir renvoyer un code
+  useEffect(() => {
+    if (attente <= 0) return
+    const minuteur = setTimeout(() => setAttente(attente - 1), 1000)
+    return () => clearTimeout(minuteur)
+  }, [attente])
+
+  async function envoyerCode(e) {
+    e?.preventDefault()
+    setErreur('')
+    setInfo('')
+    setChargement(true)
+    try {
+      await demanderNouveauMotDePasse({ email })
+      setEtape('code')
+      setAttente(DELAI_RENVOI)
+      if (e === undefined) setInfo('Nouveau code envoyé. Pense à regarder dans tes spams.')
+    } catch (err) {
+      setErreur(err.message)
+    } finally {
+      setChargement(false)
+    }
+  }
+
+  async function valider(e) {
+    e.preventDefault()
+    setErreur('')
+    setInfo('')
+    if (code.length !== 6) {
+      setErreur('Tape les 6 chiffres du code.')
+      return
+    }
+    if (password.length < 6) {
+      setErreur('Le mot de passe doit faire au moins 6 caractères.')
+      return
+    }
+
+    setChargement(true)
+    try {
+      const session = await changerMotDePasse({ email, code, password })
+      login(session)
+      navigate('/accueil')
+    } catch (err) {
+      setErreur(err.message)
+      setCode('')
+    } finally {
+      setChargement(false)
+    }
+  }
+
+  const messages = (
+    <>
+      {erreur && (
+        <p className="erreur" role="alert">
+          {erreur}
+        </p>
+      )}
+      {info && (
+        <p className="info" role="status">
+          {info}
+        </p>
+      )}
+    </>
+  )
+
+  if (etape === 'email') {
+    return (
+      <AuthLayout
+        titre="Mot de passe oublié"
+        sousTitre="Donne ton email : on t'envoie un code pour choisir un nouveau mot de passe."
+        accroche="Ça arrive aux meilleurs."
+      >
+        <form className="form" onSubmit={envoyerCode}>
+          {messages}
+          <div className="champ">
+            <label htmlFor="email">Email</label>
+            <input
+              id="email"
+              name="email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              autoComplete="email"
+              placeholder="ines@mail.fr"
+              required
+              autoFocus
+            />
+          </div>
+          <button type="submit" className="btn btn-outremer" disabled={chargement}>
+            {chargement ? 'Envoi…' : 'Recevoir un code'}
+          </button>
+        </form>
+        <p className="auth-bas">
+          Ça te revient ? <Link to="/connexion">Retour à la connexion</Link>
+        </p>
+      </AuthLayout>
+    )
+  }
+
+  return (
+    <AuthLayout
+      titre="Nouveau mot de passe"
+      sousTitre={
+        <>
+          Si un compte existe pour <strong>{email}</strong>, un code à 6 chiffres vient d'y être envoyé. Il est valable 10 minutes.
+        </>
+      }
+      accroche="Ça arrive aux meilleurs."
+    >
+      <form className="form" onSubmit={valider}>
+        {messages}
+        <div className="champ">
+          <span className="champ-titre">Code reçu par email</span>
+          <ChampCode valeur={code} onChange={setCode} desactive={chargement} />
+        </div>
+        <ChampMotDePasse
+          id="password"
+          label="Nouveau mot de passe"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          autoComplete="new-password"
+          aide="6 caractères minimum."
+        />
+        <button type="submit" className="btn btn-outremer" disabled={chargement}>
+          {chargement ? 'Enregistrement…' : 'Changer mon mot de passe'}
+        </button>
+      </form>
+
+      <p className="auth-bas">
+        Pas reçu ?{' '}
+        {attente > 0 ? (
+          <span>Nouveau code possible dans {attente} s</span>
+        ) : (
+          <button type="button" className="lien" onClick={() => envoyerCode()}>
+            Renvoyer un code
+          </button>
+        )}
+      </p>
+      <p className="auth-bas" style={{ marginTop: 8 }}>
+        <button type="button" className="lien" onClick={() => setEtape('email')}>
+          Changer d'adresse email
+        </button>
+      </p>
+    </AuthLayout>
+  )
+}

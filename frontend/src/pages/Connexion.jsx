@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import AuthLayout from '../components/AuthLayout.jsx'
 import ChampMotDePasse from '../components/ChampMotDePasse.jsx'
 import { connecter } from '../api/auth.js'
@@ -10,8 +10,11 @@ export default function Connexion() {
   const [password, setPassword] = useState('')
   const [erreur, setErreur] = useState('')
   const [chargement, setChargement] = useState(false)
-  const { login } = useAuth()
+  const { login, expiree } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
+  // Message venu d'une autre page (ex : "mot de passe changé") ou session expirée
+  const info = location.state?.info || (expiree ? 'Ta session a expiré, reconnecte-toi.' : '')
 
   async function envoyer(e) {
     e.preventDefault()
@@ -45,6 +48,11 @@ export default function Connexion() {
             {erreur}
           </p>
         )}
+        {!erreur && info && (
+          <p className="info" role="status">
+            {info}
+          </p>
+        )}
 
         <div className="champ">
           <label htmlFor="email">Email</label>
@@ -67,6 +75,9 @@ export default function Connexion() {
           onChange={(e) => setPassword(e.target.value)}
           autoComplete="current-password"
         />
+        <Link to="/mot-de-passe-oublie" state={{ email }} className="lien-oubli">
+          Mot de passe oublié ?
+        </Link>
 
         <button type="submit" className="btn btn-outremer" disabled={chargement}>
           {chargement ? 'Connexion…' : 'Se connecter'}

@@ -8,33 +8,37 @@ export const DUREE_CODE_MINUTES = 10; // durée de validité d'un code
 export const DELAI_RENVOI_SECONDES = 60; // temps minimum entre deux envois
 export const TENTATIVES_MAX = 5; // mauvais essais autorisés par code
 
-// Crée un nouveau code, remplace l'ancien et l'envoie par email
-export async function envoyerCode(user) {
+// "but" = à quoi sert le code : "verification" (email) ou "reinitialisation" (mot de passe).
+// Les deux usages ont chacun leur code : l'un ne peut pas servir à la place de l'autre.
+
+// Crée un nouveau code, remplace l'ancien du même usage et l'envoie par email
+export async function envoyerCode(user, but = "verification") {
   // crypto.randomInt est un vrai tirage aléatoire sécurisé (Math.random ne l'est pas)
   const code = crypto.randomInt(0, 1_000_000).toString().padStart(6, "0");
 
-  await CodeVerification.deleteMany({ id_user: user._id });
+  await CodeVerification.deleteMany({ id_user: user._id, but });
   await CodeVerification.create({
     id_user: user._id,
+    but,
     code_hash: await bcrypt.hash(code, 10),
     expire_le: new Date(Date.now() + DUREE_CODE_MINUTES * 60 * 1000),
   });
 
-  await envoyerEmail({ to: user.email, ...emailCode(user.name, code, DUREE_CODE_MINUTES) });
+  await envoyerEmail({ to: user.email, ...emailCode(user.name, code, DUREE_CODE_MINUTES, but) });
 }
 
-// Vrai si le dernier code date de plus d'une minute (anti-spam)
-export async function peutRenvoyer(user) {
-  const dernier = await CodeVerification.findOne({ id_user: user._id });
+// Vrai si le dernier code de cet usage date de plus d'une minute (anti-spam)
+export async function peutRenvoyer(user, but = "verification") {
+  const dernier = await CodeVerification.findOne({ id_user: user._id, but });
   if (!dernier) return true;
   return Date.now() - dernier.createdAt.getTime() >= DELAI_RENVOI_SECONDES * 1000;
 }
 
 // Vérifie le code saisi. Renvoie "ok", "expire", "trop_tentatives" ou "invalide".
-export async function verifierCode(user, code) {
+export async function verifierCode(user, code, but = "verification") {
   // On compte l'essai tout de suite (même s'il est bon) pour bloquer les essais en rafale
   const enregistrement = await CodeVerification.findOneAndUpdate(
-    { id_user: user._id },
+    { id_user: user._id, but },
     { $inc: { tentatives: 1 } },
     { returnDocument: "after" }
   );
@@ -45,6 +49,6 @@ export async function verifierCode(user, code) {
   const bon = await bcrypt.compare(String(code), enregistrement.code_hash);
   if (!bon) return "invalide";
 
-  await CodeVerification.deleteMany({ id_user: user._id });
+  await CodeVerification.deleteMany({ id_user: user._id, but });
   return "ok";
 }

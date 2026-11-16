@@ -19,6 +19,8 @@ const userSchema = new mongoose.Schema(
     role: { type: String, enum: ["user", "admin"], default: "user" },
     // Passe à true quand le user a saisi le code reçu par email
     email_verifie: { type: Boolean, default: false },
+    // Date du dernier changement de mot de passe : les tokens créés avant ne marchent plus
+    mdp_change_le: { type: Date, default: null },
     // Photo de profil ou, par défaut, un emoji sur un rond de couleur
     avatar: {
       emoji: { type: String, default: emojiAuHasard },
@@ -37,6 +39,7 @@ const userSchema = new mongoose.Schema(
 userSchema.set("toJSON", {
   transform: (doc, ret) => {
     delete ret.password;
+    delete ret.mdp_change_le;
     return ret;
   },
 });

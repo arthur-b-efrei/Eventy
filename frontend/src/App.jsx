@@ -7,11 +7,14 @@ import Inscription from './pages/Inscription.jsx'
 import Accueil from './pages/Accueil.jsx'
 import Verification from './pages/Verification.jsx'
 import Bienvenue from './pages/Bienvenue.jsx'
+import MotDePasseOublie from './pages/MotDePasseOublie.jsx'
 
 // Page réservée aux users connectés : sinon, retour à la landing page
+// (ou à la connexion si la session vient d'expirer, pour pouvoir se reconnecter tout de suite)
 function RouteConnectee({ children }) {
-  const { token } = useAuth()
-  return token ? children : <Navigate to="/" replace />
+  const { token, expiree } = useAuth()
+  if (token) return children
+  return <Navigate to={expiree ? '/connexion' : '/'} replace />
 }
 
 // Page réservée aux visiteurs : si on est déjà connecté, direction l'accueil
@@ -29,6 +32,7 @@ export default function App() {
           <Route path="/" element={<Landing />} />
           <Route path="/connexion" element={<RouteVisiteur><Connexion /></RouteVisiteur>} />
           <Route path="/inscription" element={<RouteVisiteur><Inscription /></RouteVisiteur>} />
+          <Route path="/mot-de-passe-oublie" element={<RouteVisiteur><MotDePasseOublie /></RouteVisiteur>} />
           <Route path="/verification" element={<RouteVisiteur redirection="/bienvenue"><Verification /></RouteVisiteur>} />
           <Route path="/bienvenue" element={<RouteConnectee><Bienvenue /></RouteConnectee>} />
           <Route path="/accueil" element={<RouteConnectee><Accueil /></RouteConnectee>} />

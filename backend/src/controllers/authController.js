@@ -130,6 +130,70 @@ export async function resendCode(req, res) {
   }
 }
 
+// POST /api/auth/forgot-password : { email } -> envoie un code pour changer de mot de passe
+// Réponse toujours identique, pour ne pas révéler quels emails ont un compte.
+export async function forgotPassword(req, res) {
+  try {
+    const { email } = req.body;
+    const user = email ? await User.findOne({ email: email.trim().toLowerCase() }) : null;
+
+    if (user && (await peutRenvoyer(user, "reinitialisation"))) {
+      await envoyerCode(user, "reinitialisation");
+    }
+
+    res.json({
+      message: "Si un compte existe pour cet email, un code vient d'être envoyé.",
+      delai: DELAI_RENVOI_SECONDES,
+    });
+  } catch (error) {
+    console.error("forgotPassword :", error.message);
+    res.status(500).json({ message: "Impossible d'envoyer le code pour le moment, réessaie." });
+  }
+}
+
+// POST /api/auth/reset-password : { email, code, password } -> nouveau mot de passe + connexion
+export async function resetPassword(req, res) {
+  try {
+    const { email, code, password } = req.body;
+
+    if (!email || !/^\d{6}$/.test(String(code))) {
+      return res.status(400).json({ message: "Le code doit contenir 6 chiffres" });
+    }
+    if (!password || password.length < 6) {
+      return res.status(400).json({ message: "Le mot de passe doit faire au moins 6 caractères" });
+    }
+
+    const user = await User.findOne({ email: email.trim().toLowerCase() });
+    if (!user) {
+      return res.status(400).json({ message: "Code incorrect ou expiré" });
+    }
+
+    const resultat = await verifierCode(user, code, "reinitialisation");
+    if (resultat === "expire") {
+      return res.status(400).json({ message: "Ce code a expiré. Demande un nouveau code." });
+    }
+    if (resultat === "trop_tentatives") {
+      return res.status(429).json({ message: "Trop d'essais. Demande un nouveau code." });
+    }
+    if (resultat === "invalide") {
+      return res.status(400).json({ message: "Code incorrect" });
+    }
+
+    user.password = await bcrypt.hash(password, 10);
+    // Les tokens créés avant ce moment ne marchent plus : les autres appareils sont déconnectés.
+    // (arrondi à la seconde, comme la date de création stockée dans un token)
+    user.mdp_change_le = new Date(Math.floor(Date.now() / 1000) * 1000);
+    // Le code a été reçu sur cette adresse : elle est donc vérifiée
+    user.email_verifie = true;
+    await user.save();
+
+    res.json({ token: creerToken(user), user });
+  } catch (error) {
+    console.error("resetPassword :", error.message);
+    res.status(500).json({ message: "Erreur serveur, réessaie." });
+  }
+}
+
 // POST /api/auth/login : connexion avec email + mot de passe
 export async function login(req, res) {
   try {

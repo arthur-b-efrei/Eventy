@@ -6,6 +6,8 @@ import {
   me,
   verifyEmail,
   resendCode,
+  forgotPassword,
+  resetPassword,
 } from "../controllers/authController.js";
 import protect from "../middleware/auth.js";
 
@@ -32,6 +34,8 @@ router.post("/register", limiteEnvoiEmail, register); // inscription + envoi du 
 router.post("/verify-email", limiteAuth, verifyEmail); // saisie du code reçu par email
 router.post("/resend-code", limiteEnvoiEmail, resendCode); // renvoyer un code
 router.post("/login", limiteAuth, login); // connexion
+router.post("/forgot-password", limiteEnvoiEmail, forgotPassword); // mot de passe oublié : envoi du code
+router.post("/reset-password", limiteAuth, resetPassword); // code + nouveau mot de passe
 router.get("/me", protect, me); // infos du user connecté
 
 export default router;
