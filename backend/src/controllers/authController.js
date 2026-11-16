@@ -1,6 +1,7 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import User from "../models/User.js";
+import { erreurDateNaissance } from "../utils/age.js";
 import {
   envoyerCode,
   peutRenvoyer,
@@ -28,6 +29,11 @@ export async function register(req, res) {
       return res
         .status(400)
         .json({ message: "Le mot de passe doit faire au moins 6 caractères" });
+    }
+    // On vérifie l'âge côté serveur : le formulaire seul peut être contourné
+    const erreurDate = erreurDateNaissance(date_naissance);
+    if (erreurDate) {
+      return res.status(400).json({ message: erreurDate });
     }
 
     const emailPropre = email.trim().toLowerCase();
