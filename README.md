@@ -1,32 +1,49 @@
-# React + TypeScript + Vite
+# Eventy
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+Appli pour créer des events (soirée au bar, sortie…) et y participer pour rencontrer de nouvelles personnes.
 
-Currently, two official plugins are available:
+## Structure du projet
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
-
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```
+Eventy/
+├── frontend/          → l'appli React + Vite (TypeScript)
+│   └── src/
+└── backend/           → l'API Node.js + Express
+    ├── .env.example   → modèle du fichier .env
+    └── src/
+        ├── server.js  → démarre le serveur
+        ├── app.js     → configuration d'Express
+        ├── config/
+        │   └── db.js  → connexion à MongoDB
+        └── models/    → schémas Mongoose
+            ├── User.js
+            ├── Event.js
+            └── Log.js → les réservations
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+## Lancer le projet
+
+### Backend
+
+```bash
+cd backend
+npm install
+cp .env.example .env   # puis remplir MONGO_URI et JWT_SECRET
+npm run dev
+```
+
+L'API tourne sur http://localhost:5000 (test : http://localhost:5000/api/health).
+
+### Frontend
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+## Base de données (MongoDB)
+
+- **User** : name, email, password (crypté), date_naissance, role, date de création
+- **Event** : titre, describe, nb_user, nb_max_user, id_creator, localisation, date_event
+- **Log** (réservation) : describe, id_event, id_user
