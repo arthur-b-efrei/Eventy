@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import authRoutes from "./routes/authRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
+import eventListRoutes from "./routes/eventListRoutes.js";
 
 const app = express();
 
@@ -25,6 +26,9 @@ app.use("/api/auth", authRoutes);
 
 // Profil des users (photo de profil)
 app.use("/api/users", userRoutes);
+
+// Liste des événements (homepage)
+app.use("/api/events", eventListRoutes);
 
 // Les autres routes (events, réservations) seront branchées ici.
 
