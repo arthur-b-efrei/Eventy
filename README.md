@@ -68,6 +68,9 @@ Le front tourne sur http://localhost:5173 et appelle l'API sur http://localhost:
 | POST | `/api/auth/forgot-password` | Mot de passe oublié : envoie un code (email), réponse identique que le compte existe ou non | non |
 | POST | `/api/auth/reset-password` | Nouveau mot de passe (email, code, password) → renvoie `token` + `user` | non |
 | GET | `/api/auth/me` | Infos du user connecté | oui |
+| PATCH | `/api/users/me` | Modifie le prénom (`name`) et/ou la date de naissance — l'email et le rôle ne sont pas modifiables | oui |
+| PUT | `/api/users/me/password` | Change le mot de passe (`ancien`, `nouveau`) → nouveau `token`, les autres appareils sont déconnectés | oui |
+| DELETE | `/api/users/me` | Supprime le compte (`password` pour confirmer), avec sa photo, ses réservations et ses events | oui |
 | PUT | `/api/users/me/avatar` | Envoie sa photo de profil (`image` en data URL JPEG/PNG/WebP, 500 Ko max) | oui |
 | DELETE | `/api/users/me/avatar` | Supprime sa photo, retour à l'emoji | oui |
 | GET | `/api/users/:id/avatar` | Affiche la photo d'un user (mise en cache 1 an, l'URL change à chaque nouvelle photo) | non |
@@ -120,3 +123,7 @@ Pour les boutons, utiliser le composant `<Bouton variante="lampion | outremer | 
 - **Event** : titre, describe, nb_user, nb_max_user, id_creator, localisation, date_event
 - **Reservation** : id_user, id_event, describe (message du participant), date d'inscription
 - **Log** (historique) : describe (l'action), id_event, id_user, date
+
+## Documentation
+
+- [Events à proximité (géolocalisation)](docs/geolocalisation.md) : comment montrer les events autour de l'utilisateur, façon Too Good To Go.

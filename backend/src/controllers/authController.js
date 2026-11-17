@@ -1,6 +1,6 @@
 import bcrypt from "bcryptjs";
-import jwt from "jsonwebtoken";
 import User from "../models/User.js";
+import { creerToken } from "../utils/token.js";
 import { erreurDateNaissance } from "../utils/age.js";
 import {
   envoyerCode,
@@ -9,12 +9,6 @@ import {
   DELAI_RENVOI_SECONDES,
 } from "../services/codeVerification.js";
 
-// Crée un token JWT qui contient l'id et le rôle du user (valable 7 jours)
-function creerToken(user) {
-  return jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, {
-    expiresIn: "7d",
-  });
-}
 
 // POST /api/auth/register : inscription
 // Le compte est créé mais pas encore utilisable : un code est envoyé par email.

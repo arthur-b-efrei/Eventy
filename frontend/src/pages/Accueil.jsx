@@ -1,15 +1,25 @@
 
 import { useEffect, useMemo, useState } from "react";
-import { Search, SearchX, WifiOff, RotateCw, CalendarPlus } from "lucide-react";
+import {
+  Search,
+  SearchX,
+  WifiOff,
+  RotateCw,
+  CalendarPlus,
+} from "lucide-react";
 
 import AppLayout from "../components/AppLayout.jsx";
-import EventCard, { EventCardSkeleton } from "../components/EventCard.jsx";
+import EventCard, {
+  EventCardSkeleton,
+} from "../components/EventCard.jsx";
 import EmptyState from "../components/ui/EmptyState.jsx";
-import { useAuth } from "../context/AuthContext.js";
-import { getEventVisual, normalizeText } from "../utils/eventVisual.js";
 
-const API_URL =
-  import.meta.env.VITE_API_URL || "http://localhost:5000";
+import { useAuth } from "../context/AuthContext.js";
+import { listerEvents } from "../api/events.js";
+import {
+  getEventVisual,
+  normalizeText,
+} from "../utils/eventVisual.js";
 
 const secondaryButton =
   "inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:border-violet-300 hover:text-violet-700 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-violet-100";
@@ -23,35 +33,27 @@ export default function Accueil() {
   const [reloadKey, setReloadKey] = useState(0);
   const [query, setQuery] = useState("");
 
-  // Charger les événements depuis MongoDB via l'API
+  // Charger les événements avec l'API de ton collègue
   useEffect(() => {
-    const controller = new AbortController();
+    let active = true;
 
     async function chargerEvenements() {
       try {
-        const response = await fetch(
-          `${API_URL}/api/events`,
-          { signal: controller.signal }
-        );
+        const donnees = await listerEvents();
 
-        if (!response.ok) {
-          throw new Error(
-            "Impossible de charger les événements."
+        if (active) {
+          setEvents(Array.isArray(donnees) ? donnees : []);
+          setError("");
+        }
+      } catch (err) {
+        if (active) {
+          setError(
+            err.message ||
+              "Impossible de charger les événements."
           );
         }
-
-        const data = await response.json();
-
-        setEvents(Array.isArray(data) ? data : []);
-      } catch (err) {
-        if (err.name === "AbortError") return;
-
-        setError(
-          err.message ||
-          "Impossible de charger les événements."
-        );
       } finally {
-        if (!controller.signal.aborted) {
+        if (active) {
           setLoading(false);
         }
       }
@@ -59,17 +61,26 @@ export default function Accueil() {
 
     chargerEvenements();
 
-    return () => controller.abort();
+    return () => {
+      active = false;
+    };
   }, [reloadKey]);
 
-  // Réessayer si le chargement échoue
+  // Réessayer le chargement
   function reessayer() {
     setLoading(true);
     setError("");
     setReloadKey((k) => k + 1);
   }
 
-  // Préparer les événements pour les cartes
+  // Fonction de réservation de ton collègue
+  function inscrire(eventId) {
+    // TODO : brancher l'API de réservation
+    // lorsque la logique sera prête.
+    console.log("Inscription à", eventId);
+  }
+
+  // Préparer les images, icônes et catégories
   const enriched = useMemo(
     () =>
       events.map((event) => ({
@@ -79,7 +90,7 @@ export default function Accueil() {
     [events]
   );
 
-  // Recherche uniquement par titre, description ou lieu
+  // Recherche par titre, description et localisation
   const filtered = useMemo(() => {
     const q = normalizeText(query.trim());
 
@@ -87,7 +98,9 @@ export default function Accueil() {
 
     return enriched.filter(({ event }) =>
       normalizeText(
-        `${event.titre || ""} ${event.describe || ""} ${event.localisation || ""}`
+        `${event.titre || ""} ${
+          event.describe || ""
+        } ${event.localisation || ""}`
       ).includes(q)
     );
   }, [enriched, query]);
@@ -102,9 +115,11 @@ export default function Accueil() {
           </p>
 
           <h1 className="mt-2 text-balance text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl lg:text-5xl">
-            Salut
-            {user?.name ? ` ${user.name}` : ""},
-            on sort ce soir ?
+            Salut{user?.name ? ` ${user.name}` : ""},
+            {" "}
+            <span className="text-violet-600">
+              on sort ce soir ?
+            </span>
           </h1>
 
           <p className="mt-3 max-w-xl text-slate-500">
@@ -159,7 +174,7 @@ export default function Accueil() {
           </div>
         )}
 
-        {/* Erreur de chargement */}
+        {/* Erreur */}
         {!loading && error && (
           <EmptyState
             icon={WifiOff}
@@ -203,11 +218,13 @@ export default function Accueil() {
 
             {filtered.length > 0 ? (
               <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                {filtered.map(({ event, visual }) => (
+                {filtered.map(({ event, visual }, index) => (
                   <EventCard
                     key={event._id}
                     event={event}
                     visual={visual}
+                    index={index}
+                    onInscrire={inscrire}
                   />
                 ))}
               </div>
