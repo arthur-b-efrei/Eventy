@@ -1,18 +1,21 @@
 import express from "express";
 import cors from "cors";
+import eventRoutes from "./routes/eventRoutes.js";
 
 const app = express();
 
-// Autorise le front (Vite) à appeler l'API
+// Autoriser les requêtes du frontend
 app.use(cors());
-// Permet de lire le JSON envoyé dans le corps des requêtes
+
+// Lire les données JSON
 app.use(express.json());
 
-// Route de test : http://localhost:5000/api/health
+// Route de test
 app.get("/api/health", (req, res) => {
   res.json({ status: "ok" });
 });
 
-// Les routes (auth, events, réservations, profil) seront branchées ici.
+// Routes des événements
+app.use("/api/events", eventRoutes);
 
 export default app;
