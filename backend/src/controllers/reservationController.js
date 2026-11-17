@@ -201,6 +201,30 @@ export async function modifierEvenement(req, res) {
   }
 }
 
+// DELETE /api/events/:id — supprimer l'événement (créateur uniquement, sinon 404)
+export async function supprimerEvenement(req, res) {
+  try {
+    const { id } = req.params;
+    if (!idValide(id)) {
+      return res.status(400).json({ message: "Identifiant invalide" });
+    }
+
+    const event = await Event.findById(id);
+    if (!event || event.id_creator.toString() !== req.user.id) {
+      return res.status(404).json({ message: "Événement introuvable" });
+    }
+
+    // On enlève aussi toutes les réservations liées
+    await Reservation.deleteMany({ id_event: id });
+    await event.deleteOne();
+
+    res.json({ ok: true });
+  } catch (error) {
+    console.error("supprimerEvenement :", error.message);
+    res.status(500).json({ message: "Impossible de supprimer l'événement." });
+  }
+}
+
 // GET /api/events/:id/inscrits — liste des inscrits (créateur uniquement, sinon 404)
 export async function listerInscrits(req, res) {
   try {

@@ -9,6 +9,7 @@ import {
   listerMesReservations,
   modifierEvenement,
   modifierReservation,
+  supprimerEvenement,
 } from '../api/reservations.js'
 import { CHAMP, ERREUR, INPUT, LABEL } from '../components/ui.js'
 
@@ -186,7 +187,7 @@ function FormulaireEvent({ event, onAnnuler, onSauve }) {
   )
 }
 
-function CarteReservation({ item, onMaj, onMajEvent, onSupprime }) {
+function CarteReservation({ item, onMaj, onMajEvent, onSupprime, onSupprimeEvent }) {
   const { token } = useAuth()
   const [message, setMessage] = useState(item.describe || '')
   const [editionMessage, setEditionMessage] = useState(false)
@@ -218,6 +219,24 @@ function CarteReservation({ item, onMaj, onMajEvent, onSupprime }) {
     try {
       await annulerReservation(token, item._id)
       onSupprime(item._id)
+    } catch (err) {
+      setErreur(err.message)
+    } finally {
+      setAction('')
+    }
+  }
+
+  async function supprimerEvent() {
+    const ok = window.confirm(
+      'Supprimer cet événement ? Toutes les réservations associées seront aussi supprimées.',
+    )
+    if (!ok) return
+
+    setErreur('')
+    setAction('delete-event')
+    try {
+      await supprimerEvenement(token, item.event._id)
+      onSupprimeEvent(item.event._id)
     } catch (err) {
       setErreur(err.message)
     } finally {
@@ -333,11 +352,21 @@ function CarteReservation({ item, onMaj, onMajEvent, onSupprime }) {
         <Bouton
           variante="outremer"
           className="min-h-10 bg-grenadine! px-4 text-sm hover:bg-[#e94b68]!"
-          disabled={action === 'delete'}
+          disabled={action === 'delete' || action === 'delete-event'}
           onClick={() => void annuler()}
         >
           {action === 'delete' ? 'Annulation…' : 'Annuler la réservation'}
         </Bouton>
+        {item.estCreateur ? (
+          <Bouton
+            variante="discret"
+            className="min-h-10 border-grenadine! px-4 text-sm text-grenadine!"
+            disabled={action === 'delete-event' || action === 'delete'}
+            onClick={() => void supprimerEvent()}
+          >
+            {action === 'delete-event' ? 'Suppression…' : 'Supprimer l’événement'}
+          </Bouton>
+        ) : null}
       </div>
 
       {item.estCreateur ? <PanneauInscrits eventId={event._id} ouvert={inscritsOuverts} /> : null}
@@ -374,7 +403,7 @@ export default function MesReservations() {
       <h1 className="text-[clamp(28px,4.5vw,44px)]">Mes réservations</h1>
       <p className="mt-3 max-w-[40rem] text-texte-doux">
         Retrouve les événements auxquels tu es inscrit·e, modifie ton message ou annule ta place.
-        Si tu es le créateur, tu peux aussi modifier l’événement et voir les inscrits.
+        Si tu es le créateur, tu peux aussi modifier ou supprimer l’événement et voir les inscrits.
       </p>
 
       {erreur ? <p className={`${ERREUR} mt-5`}>{erreur}</p> : null}
@@ -405,6 +434,9 @@ export default function MesReservations() {
               )
             }
             onSupprime={(id) => setItems((prev) => prev.filter((r) => r._id !== id))}
+            onSupprimeEvent={(eventId) =>
+              setItems((prev) => prev.filter((r) => r.event?._id !== eventId))
+            }
           />
         ))}
       </ul>

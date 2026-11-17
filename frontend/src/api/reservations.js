@@ -49,3 +49,11 @@ export function modifierEvenement(token, eventId, champs) {
     }),
   )
 }
+
+// Supprimer un event (créateur uniquement)
+export function supprimerEvenement(token, eventId) {
+  return requete(
+    `/events/${eventId}`,
+    avecToken(token, { method: 'DELETE' }),
+  )
+}

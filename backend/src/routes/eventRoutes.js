@@ -7,10 +7,11 @@ import {
   getEvents,
 } from "../controllers/eventControllers.js";
 
-// Fonctionnalités de ton collègue : inscrits et modification
+// Fonctionnalités de ton collègue : inscrits, modification et suppression
 import {
   listerInscrits,
   modifierEvenement,
+  supprimerEvenement,
 } from "../controllers/reservationController.js";
 
 // Middleware d'authentification JWT
@@ -29,5 +30,8 @@ router.get("/:id/inscrits", auth, listerInscrits);
 
 // Modifier un événement : réservé au créateur
 router.patch("/:id", auth, modifierEvenement);
+
+// Supprimer un événement : réservé au créateur
+router.delete("/:id", auth, supprimerEvenement);
 
 export default router;
