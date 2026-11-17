@@ -74,6 +74,7 @@ Le front tourne sur http://localhost:5173 et appelle l'API sur http://localhost:
 | PUT | `/api/users/me/avatar` | Envoie sa photo de profil (`image` en data URL JPEG/PNG/WebP, 500 Ko max) | oui |
 | DELETE | `/api/users/me/avatar` | Supprime sa photo, retour à l'emoji | oui |
 | GET | `/api/users/:id/avatar` | Affiche la photo d'un user (mise en cache 1 an, l'URL change à chaque nouvelle photo) | non |
+| GET | `/api/events/:id/messages` | Discussion d'un event : les 50 derniers messages (`?avant=<id>` pour les précédents) → `event`, `messages`, `encoreAvant`. Créateur et inscrits uniquement, sinon 404 | oui |
 
 Pour les routes protégées, le front envoie l'en-tête `Authorization: Bearer <token>`.
 
@@ -90,6 +91,17 @@ Le front utilise **Tailwind CSS v4** (plugin `@tailwindcss/vite`). Les couleurs 
 
 Polices : `font-titre` (Bricolage Grotesque), `font-sans` (Manrope, par défaut), `font-mono` (DM Mono).
 Pour les boutons, utiliser le composant `<Bouton variante="lampion | outremer | contour | discret">`.
+
+## Discussion de groupe (WebSocket)
+
+Chaque event a sa messagerie de groupe, ouverte avec le bouton « Discussion » de **Mes réservations** (page `/evenements/:id/discussion`).
+
+- **Qui ?** Le créateur de l'event et les inscrits. Les droits sont revérifiés à chaque message : quelqu'un qui se désinscrit sort tout de suite de la discussion.
+- **Comment ?** L'historique est chargé par l'API (`GET /api/events/:id/messages`), puis le direct passe par **Socket.IO** sur le même port que l'API (`backend/src/socket.js`). Le front envoie son token à la connexion : `io(url, { auth: { token } })`. Il est vérifié comme dans `protect`.
+- **Messages Socket.IO** : `rejoindre` (eventId), `message` ({ eventId, texte }, 500 caractères max), `ecrit` (« Léa écrit… », rien n'est enregistré), et côté serveur `discussion-fermee` (désinscription ou event supprimé).
+- **Anti-spam** : 5 messages maximum toutes les 5 secondes par connexion.
+- **Suppression** : supprimer un event supprime sa discussion ; supprimer son compte supprime ses messages.
+- **Hébergement** : il faut un serveur Node qui reste allumé (Render, Railway, VPS…). Les hébergeurs « serverless » (Vercel, Netlify Functions) ne gardent pas les WebSockets ouverts.
 
 ## Mot de passe oublié et sessions
 
@@ -123,6 +135,7 @@ Pour les boutons, utiliser le composant `<Bouton variante="lampion | outremer | 
 - **Event** : titre, describe, nb_user, nb_max_user, id_creator, localisation, date_event
 - **Reservation** : id_user, id_event, describe (message du participant), date d'inscription
 - **Log** (historique) : describe (l'action), id_event, id_user, date
+- **Message** : id_event, id_user, texte, date d'envoi (discussion de groupe d'un event)
 
 ## Documentation
 

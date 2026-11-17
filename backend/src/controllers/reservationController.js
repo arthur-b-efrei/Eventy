@@ -2,6 +2,8 @@ import mongoose from "mongoose";
 import Reservation from "../models/Reservation.js";
 import Event from "../models/Event.js";
 import User from "../models/User.js";
+import Message from "../models/Message.js";
+import { fermerLaDiscussion, retirerDeLaDiscussion } from "../socket.js";
 
 function idValide(valeur) {
   return mongoose.Types.ObjectId.isValid(valeur);
@@ -117,6 +119,11 @@ export async function annulerReservation(req, res) {
       await event.save();
     }
 
+    // Plus inscrit : il sort de la discussion (sauf s'il est le créateur, qui y garde accès)
+    if (event && event.id_creator.toString() !== req.user.id) {
+      retirerDeLaDiscussion(req.user.id, eventId);
+    }
+
     res.json({ ok: true });
   } catch (error) {
     console.error("annulerReservation :", error.message);
@@ -216,7 +223,9 @@ export async function supprimerEvenement(req, res) {
 
     // On enlève aussi toutes les réservations liées
     await Reservation.deleteMany({ id_event: id });
+    await Message.deleteMany({ id_event: id }); // et sa discussion
     await event.deleteOne();
+    fermerLaDiscussion(id);
 
     res.json({ ok: true });
   } catch (error) {

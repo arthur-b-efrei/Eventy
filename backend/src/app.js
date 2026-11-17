@@ -7,6 +7,7 @@ import userRoutes from "./routes/userRoutes.js";
 import reservationRoutes from "./routes/reservationRoutes.js";
 import eventListRoutes from "./routes/eventListRoutes.js";
 import eventRoutes from "./routes/eventRoutes.js";
+import discussionRoutes from "./routes/discussionRoutes.js";
 
 const app = express();
 
@@ -36,5 +37,8 @@ app.use("/api/events", eventListRoutes);
 
 // Création et gestion des événements
 app.use("/api/events", eventRoutes);
+
+// Discussion de groupe d'un événement (historique ; le direct passe par le WebSocket, voir socket.js)
+app.use("/api/events", discussionRoutes);
 
 export default app;

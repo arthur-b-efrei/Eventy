@@ -13,6 +13,7 @@ import MesReservations from './pages/MesReservations.jsx'
 import CreateEvent from './pages/createEvent.jsx'
 
 import Profil from './pages/Profil.jsx'
+import Discussion from './pages/Discussion.jsx'
 import Verification from './pages/Verification.jsx'
 import Bienvenue from './pages/Bienvenue.jsx'
 import MotDePasseOublie from './pages/MotDePasseOublie.jsx'
@@ -84,6 +85,11 @@ export default function App() {
           <Route
             path="/creer-evenement"
             element={<RouteConnectee><CreateEvent /></RouteConnectee>}
+          />
+
+          <Route
+            path="/evenements/:id/discussion"
+            element={<RouteConnectee><Discussion /></RouteConnectee>}
           />
 
           <Route
