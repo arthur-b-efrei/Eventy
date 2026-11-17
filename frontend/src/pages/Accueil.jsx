@@ -20,10 +20,7 @@ import { ERREUR } from "../components/ui.js";
 import { useAuth } from "../context/AuthContext.js";
 import { listerEvents, inscrireEvent } from "../api/events.js";
 import { listerMesReservations } from "../api/reservations.js";
-import {
-  getEventVisual,
-  normalizeText,
-} from "../utils/eventVisual.js";
+import { getEventVisual } from "../utils/eventVisual.js";
 
 // Les genres possibles : même liste que dans le modèle Event.js (backend)
 // et que la liste déroulante du formulaire de création
@@ -48,9 +45,17 @@ export default function Accueil() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [reloadKey, setReloadKey] = useState(0);
+  // Texte tapé dans la barre de recherche (change à chaque lettre)
   const [query, setQuery] = useState("");
+  // Texte réellement envoyé au serveur (mis à jour quand on arrête de taper)
+  const [rechercheEnvoyee, setRechercheEnvoyee] = useState("");
   // Genre sélectionné dans le filtre ("" = Tous)
   const [genre, setGenre] = useState("");
+
+  // Pagination : page affichée, et infos renvoyées par le serveur
+  const [page, setPage] = useState(1);
+  const [pages, setPages] = useState(1);
+  const [total, setTotal] = useState(0);
 
   // Messages après un clic sur "S'inscrire"
   const [toast, setToast] = useState(""); // succès (petite notification en bas)
@@ -76,16 +81,39 @@ export default function Accueil() {
       });
   }, [token]);
 
-  // Charger les événements avec l'API de ton collègue
+  // Recherche : on attend 400 ms après la dernière lettre tapée avant d'interroger le serveur
+  // (sinon "jazz" enverrait 4 demandes : "j", "ja", "jaz", "jazz")
+  useEffect(() => {
+    const texte = query.trim();
+    if (texte === rechercheEnvoyee) return;
+
+    const minuteur = setTimeout(() => {
+      setRechercheEnvoyee(texte);
+      setPage(1); // nouvelle recherche -> on repart de la page 1
+      setLoading(true);
+    }, 400);
+
+    // Si une autre lettre est tapée avant 400 ms, on annule ce minuteur
+    return () => clearTimeout(minuteur);
+  }, [query, rechercheEnvoyee]);
+
+  // Charger une page d'événements depuis le serveur,
+  // à chaque changement de page, de recherche ou de genre
   useEffect(() => {
     let active = true;
 
     async function chargerEvenements() {
       try {
-        const donnees = await listerEvents();
+        const donnees = await listerEvents({
+          page,
+          recherche: rechercheEnvoyee,
+          genre,
+        });
 
         if (active) {
-          setEvents(Array.isArray(donnees) ? donnees : []);
+          setEvents(donnees.items || []);
+          setPages(donnees.pages || 1);
+          setTotal(donnees.total || 0);
           setError("");
         }
       } catch (err) {
@@ -107,13 +135,38 @@ export default function Accueil() {
     return () => {
       active = false;
     };
-  }, [reloadKey]);
+  }, [page, rechercheEnvoyee, genre, reloadKey]);
 
   // Réessayer le chargement
   function reessayer() {
     setLoading(true);
     setError("");
     setReloadKey((k) => k + 1);
+  }
+
+  // Clic sur un genre : nouveau filtre -> on repart de la page 1
+  function choisirGenre(g) {
+    if (g === genre) return;
+    setGenre(g);
+    setPage(1);
+    setLoading(true);
+  }
+
+  // Clic sur une page (Précédent, numéro, Suivant)
+  function allerPage(p) {
+    if (p === page || p < 1 || p > pages) return;
+    setPage(p);
+    setLoading(true);
+    window.scrollTo({ top: 0, behavior: "smooth" }); // remonter en haut de la liste
+  }
+
+  // Bouton "Effacer les filtres"
+  function effacerFiltres() {
+    setQuery("");
+    setRechercheEnvoyee("");
+    setGenre("");
+    setPage(1);
+    setLoading(true);
   }
 
   // Clic sur "S'inscrire" d'une carte
@@ -170,26 +223,9 @@ export default function Accueil() {
     [events]
   );
 
-  // Filtre par genre, puis recherche par titre, description et localisation
-  const filtered = useMemo(() => {
-    // 1. Genre : si un genre est choisi, on ne garde que les événements de ce genre
-    const parGenre = genre
-      ? enriched.filter(({ event }) => event.genre === genre)
-      : enriched;
-
-    // 2. Recherche texte, sur ce qui reste
-    const q = normalizeText(query.trim());
-
-    if (!q) return parGenre;
-
-    return parGenre.filter(({ event }) =>
-      normalizeText(
-        `${event.titre || ""} ${
-          event.describe || ""
-        } ${event.localisation || ""}`
-      ).includes(q)
-    );
-  }, [enriched, query, genre]);
+  // La recherche et le genre sont maintenant filtrés par le serveur :
+  // "events" contient déjà uniquement les événements de la page demandée.
+  const filtresActifs = Boolean(rechercheEnvoyee || genre);
 
   return (
     <AppLayout>
@@ -215,8 +251,8 @@ export default function Accueil() {
         </div>
       </section>
 
-      {/* BARRE DE RECHERCHE */}
-      {!loading && !error && events.length > 0 && (
+      {/* BARRE DE RECHERCHE (reste affichée pendant le chargement, pour ne pas perdre ce qu'on tape) */}
+      {!error && (
         <section
           className="mt-10"
           aria-label="Recherche d'événements"
@@ -246,7 +282,7 @@ export default function Accueil() {
               <button
                 key={g || "tous"}
                 type="button"
-                onClick={() => setGenre(g)}
+                onClick={() => choisirGenre(g)}
                 aria-pressed={genre === g}
                 className={`rounded-full border px-4 py-1.5 text-sm font-semibold transition ${
                   genre === g
@@ -301,8 +337,8 @@ export default function Accueil() {
           </EmptyState>
         )}
 
-        {/* Aucun événement */}
-        {!loading && !error && events.length === 0 && (
+        {/* Aucun événement du tout (pas de filtre actif) */}
+        {!loading && !error && total === 0 && !filtresActifs && (
           <EmptyState
             icon={CalendarPlus}
             title="Aucun événement pour le moment"
@@ -310,15 +346,16 @@ export default function Accueil() {
           />
         )}
 
-        {/* Événements disponibles */}
-        {!loading && !error && events.length > 0 && (
+        {/* Événements disponibles, ou aucun résultat pour les filtres */}
+        {!loading && !error && (total > 0 || filtresActifs) && (
           <>
             <p
               className="mb-4 text-sm text-slate-500"
               aria-live="polite"
             >
-              {filtered.length} événement
-              {filtered.length > 1 ? "s" : ""}
+              {total} événement
+              {total > 1 ? "s" : ""}
+              {pages > 1 && ` · page ${page} sur ${pages}`}
             </p>
 
             {/* Erreur d'inscription (déjà inscrit, complet…) */}
@@ -326,9 +363,9 @@ export default function Accueil() {
               <p className={`${ERREUR} mb-4`}>{erreurInscription}</p>
             )}
 
-            {filtered.length > 0 ? (
+            {enriched.length > 0 ? (
               <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                {filtered.map(({ event, visual }, index) => (
+                {enriched.map(({ event, visual }, index) => (
                   <EventCard
                     key={event._id}
                     event={event}
@@ -347,15 +384,55 @@ export default function Accueil() {
               >
                 <button
                   type="button"
-                  onClick={() => {
-                    setQuery("");
-                    setGenre("");
-                  }}
+                  onClick={effacerFiltres}
                   className={secondaryButton}
                 >
                   Effacer les filtres
                 </button>
               </EmptyState>
+            )}
+
+            {/* PAGINATION : seulement s'il y a plus d'une page */}
+            {pages > 1 && (
+              <nav
+                className="mt-10 flex flex-wrap items-center justify-center gap-2"
+                aria-label="Pagination"
+              >
+                <button
+                  type="button"
+                  onClick={() => allerPage(page - 1)}
+                  disabled={page === 1}
+                  className={`${secondaryButton} disabled:cursor-not-allowed disabled:opacity-40`}
+                >
+                  Précédent
+                </button>
+
+                {/* Un bouton par numéro de page : [1, 2, 3, …] */}
+                {Array.from({ length: pages }, (_, i) => i + 1).map((p) => (
+                  <button
+                    key={p}
+                    type="button"
+                    onClick={() => allerPage(p)}
+                    aria-current={p === page ? "page" : undefined}
+                    className={`size-11 rounded-xl border text-sm font-semibold transition ${
+                      p === page
+                        ? "border-violet-600 bg-violet-600 text-white"
+                        : "border-slate-200 bg-white text-slate-700 hover:border-violet-300 hover:text-violet-700"
+                    }`}
+                  >
+                    {p}
+                  </button>
+                ))}
+
+                <button
+                  type="button"
+                  onClick={() => allerPage(page + 1)}
+                  disabled={page === pages}
+                  className={`${secondaryButton} disabled:cursor-not-allowed disabled:opacity-40`}
+                >
+                  Suivant
+                </button>
+              </nav>
             )}
           </>
         )}
