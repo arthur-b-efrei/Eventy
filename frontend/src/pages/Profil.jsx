@@ -8,7 +8,6 @@ import Toast from '../components/Toast.jsx'
 import { Symbole } from '../components/Logo.jsx'
 import {
   IconeAppareilPhoto,
-  IconeBouclier,
   IconeCadenas,
   IconeCrayon,
   IconePoubelle,
@@ -398,10 +397,6 @@ export default function Profil() {
           <h1 className="mt-4 text-[clamp(28px,4.5vw,40px)] font-[750] break-words">{user?.name}</h1>
           <p className="mt-1 break-all text-texte-doux">{user?.email}</p>
           <div className="mt-4 flex flex-wrap gap-2">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-[#dcf7ee] px-3 py-1 text-xs font-bold text-[#0b5a42]">
-              <IconeBouclier className="size-3.5" />
-              Email vérifié
-            </span>
             {user?.createdAt && (
               <span className="rounded-full bg-nappe px-3 py-1 text-xs font-bold text-texte-doux">
                 Membre depuis {dateLisible(user.createdAt, { month: 'long', year: 'numeric' })}
