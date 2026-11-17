@@ -1,16 +1,20 @@
 import { requete } from './client.js'
 
-// Liste des événements (route GET /api/events).
-// Avec une position { lat, lng, rayon (mètres) } : seulement ceux autour, du plus proche au plus loin,
+// Une page d'événements (route GET /api/events)
+// Les filtres sont ajoutés à l'adresse : /events?page=2&recherche=jazz&genre=Musique
+// Avec "position" { lat, lng, rayon (mètres) } : seulement les events autour, du plus proche au plus loin,
 // chacun avec "distance" en mètres. La position n'est pas enregistrée par le serveur.
-export function listerEvents(position) {
-  if (!position) return requete('/events')
-  const parametres = new URLSearchParams({
-    lat: String(position.lat),
-    lng: String(position.lng),
-    rayon: String(position.rayon),
-  })
-  return requete(`/events?${parametres}`)
+// -> renvoie { items, page, pages, total }
+export function listerEvents({ page = 1, recherche = '', genre = '', position = null } = {}) {
+  const params = new URLSearchParams({ page })
+  if (recherche) params.set('recherche', recherche)
+  if (genre) params.set('genre', genre)
+  if (position) {
+    params.set('lat', String(position.lat))
+    params.set('lng', String(position.lng))
+    params.set('rayon', String(position.rayon))
+  }
+  return requete(`/events?${params}`)
 }
 
 // "à 650 m", "à 1,2 km", "à 14 km"
