@@ -11,14 +11,28 @@ const emptyForm = {
   nb_max_user: "",
   localisation: "",
   date_event: "",
+  genre: "",
+  image: "",
 };
 
+const genres = [
+  "Autre",
+  "Musique",
+  "Karaoké",
+  "Sport",
+  "Cinéma",
+  "Conférence",
+  "Jeux",
+  "Gastronomie",
+];
+
 function CreateEvent() {
-  const [form, setForm] = useState(emptyForm);
+  const [form, setForm] = useState({ ...emptyForm });
   const [errors, setErrors] = useState({});
   const [serverError, setServerError] = useState("");
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
+  const [imageError, setImageError] = useState(false);
 
   function handleChange(e) {
     const { name, value } = e.target;
@@ -33,23 +47,55 @@ function CreateEvent() {
       [name]: undefined,
     }));
 
+    if (name === "image") {
+      setImageError(false);
+    }
+
     setSuccess("");
     setServerError("");
   }
 
   async function handleSubmit(e) {
     e.preventDefault();
-
     setServerError("");
     setSuccess("");
 
-    const validationErrors = validateEvent(form);
+    // Validation existante + nouveaux champs obligatoires
+    const validationErrors = {
+      ...validateEvent(form),
+    };
+
+    if (!form.genre) {
+      validationErrors.genre = "Veuillez sélectionner un genre.";
+    }
+
+    if (!form.image.trim()) {
+      validationErrors.image = "L'image est obligatoire.";
+    } else {
+      try {
+        const url = new URL(form.image.trim());
+
+        if (!["http:", "https:"].includes(url.protocol)) {
+          validationErrors.image =
+            "Veuillez saisir une URL HTTP ou HTTPS.";
+        }
+      } catch {
+        validationErrors.image =
+          "Veuillez saisir une URL d'image valide.";
+      }
+    }
+
+    if (imageError) {
+      validationErrors.image =
+        "Impossible de charger cette image. Vérifie son URL.";
+    }
 
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
       return;
     }
 
+    setErrors({});
     setLoading(true);
 
     try {
@@ -59,16 +105,22 @@ function CreateEvent() {
         nb_max_user: Number(form.nb_max_user),
         localisation: form.localisation.trim(),
         date_event: form.date_event,
+        genre: form.genre,
+        image: form.image.trim(),
       });
 
       setSuccess(
         `L'événement « ${created.titre} » a bien été créé !`
       );
 
-      setForm(emptyForm);
+      setForm({ ...emptyForm });
       setErrors({});
+      setImageError(false);
     } catch (err) {
-      setServerError(err.message || "Erreur lors de la création.");
+      setServerError(
+        err.message || "Erreur lors de la création."
+      );
+
       if (err.errors) {
         setErrors(err.errors);
       }
@@ -91,6 +143,7 @@ function CreateEvent() {
 
           <p className="ce-subtitle">
             Remplis les informations ci-dessous.
+            Tous les champs sont obligatoires.
           </p>
 
           {success && (
@@ -111,54 +164,163 @@ function CreateEvent() {
             </div>
           )}
 
+          {/* TITRE */}
           <div className="ce-field">
-            <label htmlFor="titre">Titre</label>
+            <label htmlFor="titre">
+              Titre *
+            </label>
+
             <input
               id="titre"
               name="titre"
               type="text"
+              required
               value={form.titre}
               onChange={handleChange}
               placeholder="Soirée jeux de société"
               className={errors.titre ? "ce-invalid" : ""}
             />
+
             {errors.titre && (
-              <span className="ce-error">{errors.titre}</span>
+              <span className="ce-error">
+                {errors.titre}
+              </span>
             )}
           </div>
 
+          {/* DESCRIPTION */}
           <div className="ce-field">
-            <label htmlFor="describe">Description</label>
+            <label htmlFor="describe">
+              Description *
+            </label>
+
             <textarea
               id="describe"
               name="describe"
               rows="4"
+              required
               value={form.describe}
               onChange={handleChange}
               placeholder="De quoi s'agit-il ?"
               className={errors.describe ? "ce-invalid" : ""}
             />
+
             {errors.describe && (
-              <span className="ce-error">{errors.describe}</span>
+              <span className="ce-error">
+                {errors.describe}
+              </span>
             )}
           </div>
 
+          {/* GENRE */}
+          <div className="ce-field">
+            <label htmlFor="genre">
+              Genre de l'événement *
+            </label>
+
+            <select
+              id="genre"
+              name="genre"
+              required
+              value={form.genre}
+              onChange={handleChange}
+              className={
+                errors.genre
+                  ? "ce-select ce-invalid"
+                  : "ce-select"
+              }
+            >
+              <option value="" disabled>
+                Sélectionner un genre
+              </option>
+
+              {genres.map((genre) => (
+                <option key={genre} value={genre}>
+                  {genre}
+                </option>
+              ))}
+            </select>
+
+            {errors.genre && (
+              <span className="ce-error">
+                {errors.genre}
+              </span>
+            )}
+
+            <p className="ce-help">
+              Choisis la catégorie qui correspond
+              le mieux à ton événement.
+            </p>
+          </div>
+
+          {/* IMAGE */}
+          <div className="ce-field">
+            <label htmlFor="image">
+              Image de l'événement *
+            </label>
+
+            <input
+              id="image"
+              name="image"
+              type="url"
+              required
+              value={form.image}
+              onChange={handleChange}
+              placeholder="https://exemple.com/image.jpg"
+              className={errors.image ? "ce-invalid" : ""}
+            />
+
+            <p className="ce-help">
+              Colle l'URL d'une image pour
+              illustrer ton événement.
+            </p>
+
+            {errors.image && (
+              <span className="ce-error">
+                {errors.image}
+              </span>
+            )}
+
+            {form.image.trim() && !imageError && (
+              <div className="ce-image-preview">
+                <img
+                  src={form.image.trim()}
+                  alt="Aperçu de l'événement"
+                  onError={() => setImageError(true)}
+                />
+              </div>
+            )}
+
+            {imageError && (
+              <p className="ce-error">
+                Impossible d'afficher cette image.
+                Vérifie son URL.
+              </p>
+            )}
+          </div>
+
+          {/* PARTICIPANTS ET LOCALISATION */}
           <div className="ce-row">
             <div className="ce-field">
               <label htmlFor="nb_max_user">
-                Participants maximum
+                Participants maximum *
               </label>
+
               <input
                 id="nb_max_user"
                 name="nb_max_user"
                 type="number"
                 min="1"
                 step="1"
+                required
                 value={form.nb_max_user}
                 onChange={handleChange}
                 placeholder="30"
-                className={errors.nb_max_user ? "ce-invalid" : ""}
+                className={
+                  errors.nb_max_user ? "ce-invalid" : ""
+                }
               />
+
               {errors.nb_max_user && (
                 <span className="ce-error">
                   {errors.nb_max_user}
@@ -168,17 +330,22 @@ function CreateEvent() {
 
             <div className="ce-field">
               <label htmlFor="localisation">
-                Localisation
+                Localisation *
               </label>
+
               <input
                 id="localisation"
                 name="localisation"
                 type="text"
+                required
                 value={form.localisation}
                 onChange={handleChange}
                 placeholder="Paris"
-                className={errors.localisation ? "ce-invalid" : ""}
+                className={
+                  errors.localisation ? "ce-invalid" : ""
+                }
               />
+
               {errors.localisation && (
                 <span className="ce-error">
                   {errors.localisation}
@@ -187,18 +354,24 @@ function CreateEvent() {
             </div>
           </div>
 
+          {/* DATE */}
           <div className="ce-field">
             <label htmlFor="date_event">
-              Date et heure
+              Date et heure *
             </label>
+
             <input
               id="date_event"
               name="date_event"
               type="datetime-local"
+              required
               value={form.date_event}
               onChange={handleChange}
-              className={errors.date_event ? "ce-invalid" : ""}
+              className={
+                errors.date_event ? "ce-invalid" : ""
+              }
             />
+
             {errors.date_event && (
               <span className="ce-error">
                 {errors.date_event}
@@ -206,6 +379,7 @@ function CreateEvent() {
             )}
           </div>
 
+          {/* BOUTON */}
           <button
             type="submit"
             className="ce-button"

@@ -1,10 +1,18 @@
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { Search, SearchX, WifiOff, RotateCw, CalendarPlus } from "lucide-react";
+
 import AppLayout from "../components/AppLayout.jsx";
+import EventCard, { EventCardSkeleton } from "../components/EventCard.jsx";
+import EmptyState from "../components/ui/EmptyState.jsx";
 import { useAuth } from "../context/AuthContext.js";
+import { getEventVisual, normalizeText } from "../utils/eventVisual.js";
 
 const API_URL =
   import.meta.env.VITE_API_URL || "http://localhost:5000";
+
+const secondaryButton =
+  "inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:border-violet-300 hover:text-violet-700 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-violet-100";
 
 export default function Accueil() {
   const { user } = useAuth();
@@ -12,89 +20,215 @@ export default function Accueil() {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [reloadKey, setReloadKey] = useState(0);
+  const [query, setQuery] = useState("");
 
+  // Charger les événements depuis MongoDB via l'API
   useEffect(() => {
+    const controller = new AbortController();
+
     async function chargerEvenements() {
       try {
-        const response = await fetch(`${API_URL}/api/events`);
+        const response = await fetch(
+          `${API_URL}/api/events`,
+          { signal: controller.signal }
+        );
 
         if (!response.ok) {
-          throw new Error("Impossible de charger les événements.");
+          throw new Error(
+            "Impossible de charger les événements."
+          );
         }
 
         const data = await response.json();
-        setEvents(data);
+
+        setEvents(Array.isArray(data) ? data : []);
       } catch (err) {
-        setError(err.message);
+        if (err.name === "AbortError") return;
+
+        setError(
+          err.message ||
+          "Impossible de charger les événements."
+        );
       } finally {
-        setLoading(false);
+        if (!controller.signal.aborted) {
+          setLoading(false);
+        }
       }
     }
 
     chargerEvenements();
-  }, []);
+
+    return () => controller.abort();
+  }, [reloadKey]);
+
+  // Réessayer si le chargement échoue
+  function reessayer() {
+    setLoading(true);
+    setError("");
+    setReloadKey((k) => k + 1);
+  }
+
+  // Préparer les événements pour les cartes
+  const enriched = useMemo(
+    () =>
+      events.map((event) => ({
+        event,
+        visual: getEventVisual(event),
+      })),
+    [events]
+  );
+
+  // Recherche uniquement par titre, description ou lieu
+  const filtered = useMemo(() => {
+    const q = normalizeText(query.trim());
+
+    if (!q) return enriched;
+
+    return enriched.filter(({ event }) =>
+      normalizeText(
+        `${event.titre || ""} ${event.describe || ""} ${event.localisation || ""}`
+      ).includes(q)
+    );
+  }, [enriched, query]);
 
   return (
     <AppLayout>
-      <h1 className="text-[clamp(32px,5vw,52px)]">
-        Salut {user?.name}, on sort ce soir ?
-      </h1>
+      {/* EN-TÊTE */}
+      <section className="flex flex-col gap-6">
+        <div>
+          <p className="text-sm font-semibold uppercase tracking-widest text-violet-600">
+            Découvrir
+          </p>
 
-      <p className="mt-3 text-texte-doux">
-        Découvre les événements proposés sur Eventy !
-      </p>
+          <h1 className="mt-2 text-balance text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl lg:text-5xl">
+            Salut
+            {user?.name ? ` ${user.name}` : ""},
+            on sort ce soir ?
+          </h1>
 
-      {loading && (
-        <p className="mt-8">Chargement des événements...</p>
-      )}
-
-      {error && (
-        <p className="mt-8 text-red-600">{error}</p>
-      )}
-
-      {!loading && !error && events.length === 0 && (
-        <p className="mt-8">
-          Aucun événement disponible pour le moment.
-        </p>
-      )}
-
-      {!loading && !error && events.length > 0 && (
-        <div className="mt-8 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {events.map((event) => (
-            <div
-              key={event._id}
-              className="rounded-2xl bg-white p-6 shadow-sm"
-            >
-              <h2 className="text-2xl font-semibold">
-                {event.titre}
-              </h2>
-
-              <p className="mt-3 text-texte-doux">
-                {event.describe}
-              </p>
-
-              <p className="mt-4">
-                📍 {event.localisation}
-              </p>
-
-              <p className="mt-2">
-                📅 {new Date(event.date_event).toLocaleString(
-                  "fr-FR",
-                  {
-                    dateStyle: "long",
-                    timeStyle: "short"
-                  }
-                )}
-              </p>
-
-              <p className="mt-2">
-                👥 {event.nb_user ?? 0} / {event.nb_max_user} participants
-              </p>
-            </div>
-          ))}
+          <p className="mt-3 max-w-xl text-slate-500">
+            Découvre les événements proposés sur Eventy
+            et trouve ta prochaine sortie.
+          </p>
         </div>
+      </section>
+
+      {/* BARRE DE RECHERCHE */}
+      {!loading && !error && events.length > 0 && (
+        <section
+          className="mt-10"
+          aria-label="Recherche d'événements"
+        >
+          <label className="relative block max-w-md">
+            <span className="sr-only">
+              Rechercher un événement
+            </span>
+
+            <Search
+              className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
+              aria-hidden="true"
+            />
+
+            <input
+              type="search"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Rechercher par titre, lieu…"
+              className="w-full rounded-xl border border-slate-200 bg-white py-3 pl-11 pr-4 text-sm text-slate-900 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-violet-400 focus:ring-4 focus:ring-violet-100"
+            />
+          </label>
+        </section>
       )}
+
+      {/* LISTE DES ÉVÉNEMENTS */}
+      <div className="mt-8">
+        {/* Chargement */}
+        {loading && (
+          <div
+            className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
+            aria-busy="true"
+          >
+            <span className="sr-only">
+              Chargement des événements…
+            </span>
+
+            {Array.from({ length: 6 }, (_, i) => (
+              <EventCardSkeleton key={i} />
+            ))}
+          </div>
+        )}
+
+        {/* Erreur de chargement */}
+        {!loading && error && (
+          <EmptyState
+            icon={WifiOff}
+            tone="error"
+            title="Oups, un problème est survenu"
+            description={error}
+          >
+            <button
+              type="button"
+              onClick={reessayer}
+              className={secondaryButton}
+            >
+              <RotateCw
+                className="h-4 w-4"
+                aria-hidden="true"
+              />
+              Réessayer
+            </button>
+          </EmptyState>
+        )}
+
+        {/* Aucun événement */}
+        {!loading && !error && events.length === 0 && (
+          <EmptyState
+            icon={CalendarPlus}
+            title="Aucun événement pour le moment"
+            description="Aucun événement n'a encore été publié sur Eventy."
+          />
+        )}
+
+        {/* Événements disponibles */}
+        {!loading && !error && events.length > 0 && (
+          <>
+            <p
+              className="mb-4 text-sm text-slate-500"
+              aria-live="polite"
+            >
+              {filtered.length} événement
+              {filtered.length > 1 ? "s" : ""}
+            </p>
+
+            {filtered.length > 0 ? (
+              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                {filtered.map(({ event, visual }) => (
+                  <EventCard
+                    key={event._id}
+                    event={event}
+                    visual={visual}
+                  />
+                ))}
+              </div>
+            ) : (
+              <EmptyState
+                icon={SearchX}
+                title="Aucun résultat"
+                description="Aucun événement ne correspond à ta recherche."
+              >
+                <button
+                  type="button"
+                  onClick={() => setQuery("")}
+                  className={secondaryButton}
+                >
+                  Effacer la recherche
+                </button>
+              </EmptyState>
+            )}
+          </>
+        )}
+      </div>
     </AppLayout>
   );
 }
-
