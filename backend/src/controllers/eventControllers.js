@@ -24,18 +24,25 @@ function validateEventData({
 }) {
   const errors = {};
 
+  // Titre obligatoire
   if (typeof titre !== "string" || !titre.trim()) {
     errors.titre = "Le titre est obligatoire.";
   }
 
+  // Description obligatoire
   if (typeof describe !== "string" || !describe.trim()) {
     errors.describe = "La description est obligatoire.";
   }
 
-  if (typeof localisation !== "string" || !localisation.trim()) {
+  // Localisation obligatoire
+  if (
+    typeof localisation !== "string" ||
+    !localisation.trim()
+  ) {
     errors.localisation = "La localisation est obligatoire.";
   }
 
+  // Nombre de participants obligatoire
   const max = Number(nb_max_user);
 
   if (
@@ -49,10 +56,12 @@ function validateEventData({
       "Le nombre maximum de participants doit être un entier supérieur à 0.";
   }
 
+  // Date obligatoire et dans le futur
   const date = new Date(date_event);
 
   if (!date_event) {
-    errors.date_event = "La date de l'événement est obligatoire.";
+    errors.date_event =
+      "La date de l'événement est obligatoire.";
   } else if (Number.isNaN(date.getTime())) {
     errors.date_event = "La date est invalide.";
   } else if (date <= new Date()) {
@@ -60,51 +69,34 @@ function validateEventData({
       "La date de l'événement doit être dans le futur.";
   }
 
-  // Validation du genre
+  // Genre obligatoire
   if (
-    genre !== undefined &&
-    !GENRES.includes(genre)
+    typeof genre !== "string" ||
+    !GENRES.includes(genre) ||
+    genre === "Autre"
   ) {
-    errors.genre = "Le genre sélectionné est invalide.";
+    errors.genre =
+      "Veuillez sélectionner un genre valide.";
   }
 
-  // Validation de l'URL de l'image
-  if (image !== undefined && image !== "") {
+  // Image FACULTATIVE
+  // Vérifier l'URL uniquement si une image est fournie
+  if (image !== undefined && image !== null) {
     if (typeof image !== "string") {
       errors.image = "L'image doit être une URL valide.";
-    } else {
+    } else if (image.trim()) {
       try {
-        const url = new URL(image);
+        const url = new URL(image.trim());
 
         if (!["http:", "https:"].includes(url.protocol)) {
-          errors.image = "L'image doit utiliser une URL HTTP ou HTTPS.";
+          errors.image =
+            "L'image doit utiliser une URL HTTP ou HTTPS.";
         }
       } catch {
         errors.image = "L'URL de l'image est invalide.";
       }
     }
   }
-  if (
-  typeof genre !== "string" ||
-  !GENRES.includes(genre) ||
-  genre === "Autre"
-) {
-  errors.genre = "Veuillez sélectionner un genre valide.";
-}
-
-if (typeof image !== "string" || !image.trim()) {
-  errors.image = "L'image est obligatoire.";
-} else {
-  try {
-    const url = new URL(image);
-
-    if (!["http:", "https:"].includes(url.protocol)) {
-      errors.image = "L'URL de l'image est invalide.";
-    }
-  } catch {
-    errors.image = "L'URL de l'image est invalide.";
-  }
-}
 
   return errors;
 }
@@ -131,7 +123,7 @@ export async function createEvent(req, res) {
       image,
     } = req.body;
 
-    // Le serveur définit lui-même le créateur et le nombre d'inscrits
+    // Création de l'événement
     const event = await Event.create({
       titre: titre.trim(),
       describe: describe.trim(),
@@ -139,10 +131,15 @@ export async function createEvent(req, res) {
       localisation: localisation.trim(),
       date_event: new Date(date_event),
 
-      // Nouveaux champs
-      genre: genre || "Autre",
-      image: image?.trim() || "",
+      // Genre obligatoire
+      genre,
 
+      // Image facultative
+      image: typeof image === "string"
+        ? image.trim()
+        : "",
+
+      // Données définies par le serveur
       nb_user: 0,
       id_creator: req.user.id,
     });

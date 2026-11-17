@@ -60,18 +60,23 @@ function CreateEvent() {
     setServerError("");
     setSuccess("");
 
-    // Validation existante + nouveaux champs obligatoires
+    // Validation des champs obligatoires
     const validationErrors = {
       ...validateEvent(form),
     };
 
-    if (!form.genre) {
-      validationErrors.genre = "Veuillez sélectionner un genre.";
+    // L'image est facultative :
+    // on retire toute erreur "image obligatoire"
+    // provenant de l'ancienne validation.
+    delete validationErrors.image;
+
+    if (!form.genre || form.genre === "Autre") {
+      validationErrors.genre =
+        "Veuillez sélectionner un genre.";
     }
 
-    if (!form.image.trim()) {
-      validationErrors.image = "L'image est obligatoire.";
-    } else {
+    // Vérifier l'URL uniquement si une image est fournie
+    if (form.image.trim()) {
       try {
         const url = new URL(form.image.trim());
 
@@ -83,11 +88,11 @@ function CreateEvent() {
         validationErrors.image =
           "Veuillez saisir une URL d'image valide.";
       }
-    }
 
-    if (imageError) {
-      validationErrors.image =
-        "Impossible de charger cette image. Vérifie son URL.";
+      if (imageError) {
+        validationErrors.image =
+          "Impossible de charger cette image. Vérifie son URL.";
+      }
     }
 
     if (Object.keys(validationErrors).length > 0) {
@@ -106,6 +111,8 @@ function CreateEvent() {
         localisation: form.localisation.trim(),
         date_event: form.date_event,
         genre: form.genre,
+
+        // Image facultative
         image: form.image.trim(),
       });
 
@@ -143,7 +150,8 @@ function CreateEvent() {
 
           <p className="ce-subtitle">
             Remplis les informations ci-dessous.
-            Tous les champs sont obligatoires.
+            Tous les champs sont obligatoires,
+            sauf l'image.
           </p>
 
           {success && (
@@ -253,17 +261,16 @@ function CreateEvent() {
             </p>
           </div>
 
-          {/* IMAGE */}
+          {/* IMAGE FACULTATIVE */}
           <div className="ce-field">
             <label htmlFor="image">
-              Image de l'événement *
+              Image de l'événement (facultatif)
             </label>
 
             <input
               id="image"
               name="image"
               type="url"
-              required
               value={form.image}
               onChange={handleChange}
               placeholder="https://exemple.com/image.jpg"
@@ -271,8 +278,9 @@ function CreateEvent() {
             />
 
             <p className="ce-help">
-              Colle l'URL d'une image pour
-              illustrer ton événement.
+              Tu peux ajouter une URL d'image pour
+              illustrer ton événement, ou laisser
+              ce champ vide.
             </p>
 
             {errors.image && (
@@ -281,6 +289,7 @@ function CreateEvent() {
               </span>
             )}
 
+            {/* Aperçu uniquement si une image est fournie */}
             {form.image.trim() && !imageError && (
               <div className="ce-image-preview">
                 <img
@@ -291,7 +300,7 @@ function CreateEvent() {
               </div>
             )}
 
-            {imageError && (
+            {form.image.trim() && imageError && (
               <p className="ce-error">
                 Impossible d'afficher cette image.
                 Vérifie son URL.

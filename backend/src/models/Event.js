@@ -73,21 +73,24 @@ const eventSchema = new mongoose.Schema(
 
     // URL de l'image obligatoire
     image: {
-      type: String,
-      required: [true, "L'image est obligatoire."],
-      trim: true,
-      validate: {
-        validator: function (value) {
-          try {
-            const url = new URL(value);
-            return ["http:", "https:"].includes(url.protocol);
-          } catch {
-            return false;
-          }
-        },
-        message: "L'URL de l'image est invalide.",
-      },
+  type: String,
+  required: false,
+  default: "",
+  trim: true,
+  validate: {
+    validator(value) {
+      if (!value) return true;
+
+      try {
+        const url = new URL(value);
+        return ["http:", "https:"].includes(url.protocol);
+      } catch {
+        return false;
+      }
     },
+    message: "L'URL de l'image est invalide.",
+  },
+},
   },
   {
     timestamps: true,
