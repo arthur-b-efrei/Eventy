@@ -1,24 +1,97 @@
+
 import mongoose from "mongoose";
 
-// Un event créé par un user (ex : soirée au bar).
+// Un événement créé par un utilisateur
 const eventSchema = new mongoose.Schema(
   {
-    titre: { type: String, required: true, trim: true },
-    describe: { type: String, default: "" },
+    // Titre obligatoire
+    titre: {
+      type: String,
+      required: [true, "Le titre est obligatoire."],
+      trim: true,
+    },
+
+    // Description obligatoire
+    describe: {
+      type: String,
+      required: [true, "La description est obligatoire."],
+      trim: true,
+    },
+
     // Nombre de personnes déjà inscrites
-    nb_user: { type: Number, default: 0, min: 0 },
-    // Nombre de places au total
-    nb_max_user: { type: Number, required: true, min: 1 },
-    // Le user qui a créé l'event (lien vers la collection User)
+    nb_user: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+
+    // Nombre maximum de participants
+    nb_max_user: {
+      type: Number,
+      required: [true, "Le nombre de participants est obligatoire."],
+      min: [1, "Il faut au moins un participant."],
+    },
+
+    // Utilisateur qui a créé l'événement
     id_creator: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
     },
-    localisation: { type: String, required: true, trim: true },
-    date_event: { type: Date, required: true },
+
+    // Localisation obligatoire
+    localisation: {
+      type: String,
+      required: [true, "La localisation est obligatoire."],
+      trim: true,
+    },
+
+    // Date obligatoire
+    date_event: {
+      type: Date,
+      required: [true, "La date est obligatoire."],
+    },
+
+    // Genre obligatoire
+    genre: {
+      type: String,
+      required: [true, "Le genre est obligatoire."],
+      enum: {
+        values: [
+          "Autre",
+          "Musique",
+          "Karaoké",
+          "Sport",
+          "Cinéma",
+          "Conférence",
+          "Jeux",
+          "Gastronomie",
+        ],
+        message: "Le genre sélectionné est invalide.",
+      },
+    },
+
+    // URL de l'image obligatoire
+    image: {
+      type: String,
+      required: [true, "L'image est obligatoire."],
+      trim: true,
+      validate: {
+        validator: function (value) {
+          try {
+            const url = new URL(value);
+            return ["http:", "https:"].includes(url.protocol);
+          } catch {
+            return false;
+          }
+        },
+        message: "L'URL de l'image est invalide.",
+      },
+    },
   },
-  { timestamps: true }
+  {
+    timestamps: true,
+  }
 );
 
 export default mongoose.model("Event", eventSchema);

@@ -1,41 +1,40 @@
+
 import express from "express";
 import cors from "cors";
+
 import authRoutes from "./routes/authRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 import reservationRoutes from "./routes/reservationRoutes.js";
-import eventRoutes from "./routes/eventRoutes.js";
 import eventListRoutes from "./routes/eventListRoutes.js";
+import eventRoutes from "./routes/eventRoutes.js";
 
 const app = express();
 
-// En production, l'appli tourne derrière le proxy de l'hébergeur :
-// sans ça, toutes les requêtes auraient la même IP et la limite anti-robots bloquerait tout le monde.
-app.set("trust proxy", 1);
-
-// Autorise le front (Vite) à appeler l'API
+// Autoriser les requêtes du frontend
 app.use(cors());
-// Permet de lire le JSON envoyé dans le corps des requêtes
-// (1 Mo max : assez pour une photo de profil déjà réduite par le navigateur)
-app.use(express.json({ limit: "1mb" }));
 
-// Route de test : http://localhost:5000/api/health
+// Lire les données JSON
+app.use(express.json());
+
+// Route de test
 app.get("/api/health", (req, res) => {
   res.json({ status: "ok" });
 });
 
-// Inscription / connexion
+// Authentification
 app.use("/api/auth", authRoutes);
 
-// Profil des users (photo de profil)
+// Profil utilisateur
 app.use("/api/users", userRoutes);
 
-// Réservations du user connecté
+// Réservations de l'utilisateur connecté
 app.use("/api/reservations", reservationRoutes);
 
-// Liste des événements (homepage) — avant les routes /:id
+// Liste des événements pour la page d'accueil
+// À placer avant les routes dynamiques comme /:id
 app.use("/api/events", eventListRoutes);
 
-// Events (inscrits + modification pour le créateur)
+// Création et gestion des événements
 app.use("/api/events", eventRoutes);
 
 export default app;
