@@ -21,11 +21,15 @@ export function Symbole({ couleur = 'currentColor', couleurLibre = '#FFB21E', ..
   )
 }
 
-// Le logo complet : symbole + « eventy »
-export default function Logo({ couleur, className = '', style }) {
+// Le logo complet : symbole + « eventy ».
+// Sa taille se règle avec une classe de texte (ex : text-[26px]) : le symbole suit.
+export default function Logo({ couleur, className = '' }) {
   return (
-    <span className={`logo ${className}`} style={style} aria-label="Eventy">
-      <Symbole couleur={couleur} />
+    <span
+      className={`inline-flex items-center gap-[0.32em] font-titre leading-none font-[750] tracking-[-0.045em] ${className}`}
+      aria-label="Eventy"
+    >
+      <Symbole couleur={couleur} className="size-[1.02em] shrink-0" />
       <span aria-hidden="true">eventy</span>
     </span>
   )

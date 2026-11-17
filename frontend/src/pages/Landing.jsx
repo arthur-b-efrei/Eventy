@@ -1,7 +1,7 @@
-import { Link } from 'react-router-dom'
 import LogoAnime from '../components/LogoAnime.jsx'
+import Bouton from '../components/Bouton.jsx'
+import { MONO } from '../components/ui.js'
 import { useAuth } from '../context/AuthContext.js'
-import './Landing.css'
 
 // Quelques places libres qui scintillent dans le fond (positions en %)
 const PLACES_FOND = [
@@ -17,51 +17,63 @@ const PLACES_FOND = [
 // Types de plans qui défilent en bas de la page
 const PLANS = ['Quiz au bar', 'Apéro langues', 'Foot du dimanche', 'Karaoké', 'Pétanque', 'Brunch', 'Expo', 'Escalade', 'Ciné en VO']
 
+// Les blocs de texte apparaissent l'un après l'autre, après le logo
+const APPARITION = 'animate-monte'
+
 export default function Landing() {
   const { user } = useAuth()
 
   return (
-    <div className="landing">
-      <div className="landing-fond" aria-hidden="true">
+    <div className="relative flex min-h-dvh flex-col overflow-hidden bg-outremer text-white">
+      {/* Fond "salle pleine" : une trame de places qui glisse doucement */}
+      <div
+        className="absolute inset-0 animate-trame bg-[radial-gradient(circle,rgba(255,255,255,0.11)_3px,transparent_3.6px)] [background-size:44px_44px] [mask-image:radial-gradient(ellipse_at_center,transparent_18%,#000_75%)]"
+        aria-hidden="true"
+      >
         {PLACES_FOND.map((p, i) => (
-          <span key={i} className="landing-scintille" style={{ left: `${p.x}%`, top: `${p.y}%`, animationDelay: `${p.d}s` }} />
+          <span
+            key={i}
+            className="absolute size-3.5 animate-scintille rounded-full border-2 border-lampion opacity-0"
+            style={{ left: `${p.x}%`, top: `${p.y}%`, animationDelay: `${p.d}s` }}
+          />
         ))}
       </div>
 
-      <main className="landing-centre">
+      <main className="relative flex flex-1 flex-col items-center justify-center gap-[22px] px-5 pt-14 pb-10 text-center">
         <LogoAnime />
 
-        <h1 className="landing-titre">
-          Il reste une place à la table. <em>C'est la tienne.</em>
+        <h1 className={`mt-[18px] max-w-[18ch] text-[clamp(26px,4vw,44px)] font-semibold ${APPARITION} [animation-delay:1.6s]`}>
+          Il reste une place à la table. <em className="text-lampion not-italic">C'est la tienne.</em>
         </h1>
-        <p className="landing-texte">
+        <p className={`max-w-[46ch] text-[17px] text-white/80 ${APPARITION} [animation-delay:1.75s]`}>
           Rejoins des petits groupes près de chez toi pour un verre, un quiz ou un footing. Tu réserves ta place, tu viens, tu rencontres.
         </p>
 
-        <div className="landing-boutons">
+        <div className={`mt-2 flex w-full flex-wrap justify-center gap-3.5 ${APPARITION} [animation-delay:1.9s]`}>
           {user ? (
-            <Link to="/accueil" className="btn btn-lampion">
+            <Bouton to="/accueil" variante="lampion" className="w-full sm:w-auto sm:min-w-[200px]">
               Voir les plans, {user.name}
-            </Link>
+            </Bouton>
           ) : (
             <>
-              <Link to="/inscription" className="btn btn-lampion">
+              <Bouton to="/inscription" variante="lampion" className="w-full sm:w-auto sm:min-w-[200px]">
                 Créer un compte
-              </Link>
-              <Link to="/connexion" className="btn btn-contour">
+              </Bouton>
+              <Bouton to="/connexion" variante="contour" className="w-full sm:w-auto sm:min-w-[200px]">
                 Se connecter
-              </Link>
+              </Bouton>
             </>
           )}
         </div>
       </main>
 
-      <div className="landing-bandeau" aria-hidden="true">
-        <div className="landing-defile">
+      {/* Bandeau des types de plans qui défile en continu */}
+      <div className={`relative overflow-hidden border-t border-white/20 py-4 ${APPARITION} [animation-delay:2.1s]`} aria-hidden="true">
+        <div className="flex w-max animate-defile">
           {[...PLANS, ...PLANS].map((plan, i) => (
-            <span key={i} className="mono">
+            <span key={i} className={`inline-flex items-center gap-[26px] pr-[26px] whitespace-nowrap text-white/75 ${MONO}`}>
               {plan}
-              <i />
+              <i className="size-2 rounded-full border-[1.5px] border-lampion" />
             </span>
           ))}
         </div>

@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import AuthLayout from '../components/AuthLayout.jsx'
 import ChampMotDePasse from '../components/ChampMotDePasse.jsx'
+import Bouton from '../components/Bouton.jsx'
+import { CHAMP, ERREUR, FORMULAIRE, INFO, INPUT, LABEL, TEXTE_BAS } from '../components/ui.js'
 import { connecter } from '../api/auth.js'
 import { useAuth } from '../context/AuthContext.js'
 
@@ -42,20 +44,22 @@ export default function Connexion() {
       sousTitre="Connecte-toi pour retrouver tes plans et tes réservations."
       accroche="Ta table t'attend toujours."
     >
-      <form className="form" onSubmit={envoyer}>
+      <form className={FORMULAIRE} onSubmit={envoyer}>
         {erreur && (
-          <p className="erreur" role="alert">
+          <p className={ERREUR} role="alert">
             {erreur}
           </p>
         )}
         {!erreur && info && (
-          <p className="info" role="status">
+          <p className={INFO} role="status">
             {info}
           </p>
         )}
 
-        <div className="champ">
-          <label htmlFor="email">Email</label>
+        <div className={CHAMP}>
+          <label htmlFor="email" className={LABEL}>
+            Email
+          </label>
           <input
             id="email"
             name="email"
@@ -65,6 +69,7 @@ export default function Connexion() {
             autoComplete="email"
             placeholder="ines@mail.fr"
             required
+            className={INPUT}
           />
         </div>
 
@@ -75,16 +80,16 @@ export default function Connexion() {
           onChange={(e) => setPassword(e.target.value)}
           autoComplete="current-password"
         />
-        <Link to="/mot-de-passe-oublie" state={{ email }} className="lien-oubli">
+        <Link to="/mot-de-passe-oublie" state={{ email }} className="-mt-2 justify-self-end text-sm font-bold">
           Mot de passe oublié ?
         </Link>
 
-        <button type="submit" className="btn btn-outremer" disabled={chargement}>
+        <Bouton type="submit" variante="outremer" className="mt-1.5 w-full" disabled={chargement}>
           {chargement ? 'Connexion…' : 'Se connecter'}
-        </button>
+        </Bouton>
       </form>
 
-      <p className="auth-bas">
+      <p className={TEXTE_BAS}>
         Pas encore de compte ? <Link to="/inscription">Crée-le en 1 minute</Link>
       </p>
     </AuthLayout>

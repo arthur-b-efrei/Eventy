@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import AuthLayout from '../components/AuthLayout.jsx'
 import ChampMotDePasse from '../components/ChampMotDePasse.jsx'
+import Bouton from '../components/Bouton.jsx'
+import { CHAMP, ERREUR, FORMULAIRE, INPUT, LABEL, TEXTE_BAS } from '../components/ui.js'
 import { inscrire } from '../api/auth.js'
 
 const AGE_MINIMUM = 18
@@ -66,25 +68,31 @@ export default function Inscription() {
       sousTitre="Crée ton compte pour réserver ta place aux plans près de chez toi."
       accroche="Il reste une place. C'est la tienne."
     >
-      <form className="form" onSubmit={envoyer}>
+      <form className={FORMULAIRE} onSubmit={envoyer}>
         {erreur && (
-          <p className="erreur" role="alert">
+          <p className={ERREUR} role="alert">
             {erreur}
           </p>
         )}
 
-        <div className="champ">
-          <label htmlFor="name">Prénom ou pseudo</label>
-          <input id="name" name="name" value={form.name} onChange={changer} autoComplete="given-name" placeholder="Inès" required />
+        <div className={CHAMP}>
+          <label htmlFor="name" className={LABEL}>
+            Prénom ou pseudo
+          </label>
+          <input id="name" name="name" value={form.name} onChange={changer} autoComplete="given-name" placeholder="Inès" required className={INPUT} />
         </div>
 
-        <div className="champ">
-          <label htmlFor="email">Email</label>
-          <input id="email" name="email" type="email" value={form.email} onChange={changer} autoComplete="email" placeholder="ines@mail.fr" required />
+        <div className={CHAMP}>
+          <label htmlFor="email" className={LABEL}>
+            Email
+          </label>
+          <input id="email" name="email" type="email" value={form.email} onChange={changer} autoComplete="email" placeholder="ines@mail.fr" required className={INPUT} />
         </div>
 
-        <div className="champ">
-          <label htmlFor="date_naissance">Date de naissance</label>
+        <div className={CHAMP}>
+          <label htmlFor="date_naissance" className={LABEL}>
+            Date de naissance
+          </label>
           <input
             id="date_naissance"
             name="date_naissance"
@@ -95,7 +103,9 @@ export default function Inscription() {
             max={DATE_MAX}
             autoComplete="bday"
             required
-          />        </div>
+            className={INPUT}
+          />
+        </div>
 
         <ChampMotDePasse
           id="password"
@@ -106,12 +116,12 @@ export default function Inscription() {
           aide="6 caractères minimum."
         />
 
-        <button type="submit" className="btn btn-lampion" disabled={chargement}>
+        <Bouton type="submit" variante="lampion" className="mt-1.5 w-full" disabled={chargement}>
           {chargement ? 'Création du compte…' : 'Créer mon compte'}
-        </button>
+        </Bouton>
       </form>
 
-      <p className="auth-bas">
+      <p className={TEXTE_BAS}>
         Déjà un compte ? <Link to="/connexion">Connecte-toi</Link>
       </p>
     </AuthLayout>

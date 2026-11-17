@@ -3,6 +3,8 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import AuthLayout from '../components/AuthLayout.jsx'
 import ChampCode from '../components/ChampCode.jsx'
 import ChampMotDePasse from '../components/ChampMotDePasse.jsx'
+import Bouton from '../components/Bouton.jsx'
+import { CHAMP, ERREUR, FORMULAIRE, INFO, INPUT, LABEL, LIEN_BOUTON, TEXTE_BAS } from '../components/ui.js'
 import { changerMotDePasse, demanderNouveauMotDePasse } from '../api/auth.js'
 import { useAuth } from '../context/AuthContext.js'
 
@@ -76,12 +78,12 @@ export default function MotDePasseOublie() {
   const messages = (
     <>
       {erreur && (
-        <p className="erreur" role="alert">
+        <p className={ERREUR} role="alert">
           {erreur}
         </p>
       )}
       {info && (
-        <p className="info" role="status">
+        <p className={INFO} role="status">
           {info}
         </p>
       )}
@@ -95,10 +97,12 @@ export default function MotDePasseOublie() {
         sousTitre="Donne ton email : on t'envoie un code pour choisir un nouveau mot de passe."
         accroche="Ça arrive aux meilleurs."
       >
-        <form className="form" onSubmit={envoyerCode}>
+        <form className={FORMULAIRE} onSubmit={envoyerCode}>
           {messages}
-          <div className="champ">
-            <label htmlFor="email">Email</label>
+          <div className={CHAMP}>
+            <label htmlFor="email" className={LABEL}>
+              Email
+            </label>
             <input
               id="email"
               name="email"
@@ -109,13 +113,14 @@ export default function MotDePasseOublie() {
               placeholder="ines@mail.fr"
               required
               autoFocus
+              className={INPUT}
             />
           </div>
-          <button type="submit" className="btn btn-outremer" disabled={chargement}>
+          <Bouton type="submit" variante="outremer" className="mt-1.5 w-full" disabled={chargement}>
             {chargement ? 'Envoi…' : 'Recevoir un code'}
-          </button>
+          </Bouton>
         </form>
-        <p className="auth-bas">
+        <p className={TEXTE_BAS}>
           Ça te revient ? <Link to="/connexion">Retour à la connexion</Link>
         </p>
       </AuthLayout>
@@ -132,10 +137,10 @@ export default function MotDePasseOublie() {
       }
       accroche="Ça arrive aux meilleurs."
     >
-      <form className="form" onSubmit={valider}>
+      <form className={FORMULAIRE} onSubmit={valider}>
         {messages}
-        <div className="champ">
-          <span className="champ-titre">Code reçu par email</span>
+        <div className={CHAMP}>
+          <span className={LABEL}>Code reçu par email</span>
           <ChampCode valeur={code} onChange={setCode} desactive={chargement} />
         </div>
         <ChampMotDePasse
@@ -146,23 +151,23 @@ export default function MotDePasseOublie() {
           autoComplete="new-password"
           aide="6 caractères minimum."
         />
-        <button type="submit" className="btn btn-outremer" disabled={chargement}>
+        <Bouton type="submit" variante="outremer" className="mt-1.5 w-full" disabled={chargement}>
           {chargement ? 'Enregistrement…' : 'Changer mon mot de passe'}
-        </button>
+        </Bouton>
       </form>
 
-      <p className="auth-bas">
+      <p className={TEXTE_BAS}>
         Pas reçu ?{' '}
         {attente > 0 ? (
           <span>Nouveau code possible dans {attente} s</span>
         ) : (
-          <button type="button" className="lien" onClick={() => envoyerCode()}>
+          <button type="button" className={LIEN_BOUTON} onClick={() => envoyerCode()}>
             Renvoyer un code
           </button>
         )}
       </p>
-      <p className="auth-bas" style={{ marginTop: 8 }}>
-        <button type="button" className="lien" onClick={() => setEtape('email')}>
+      <p className={`${TEXTE_BAS} mt-2!`}>
+        <button type="button" className={LIEN_BOUTON} onClick={() => setEtape('email')}>
           Changer d'adresse email
         </button>
       </p>

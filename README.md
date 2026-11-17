@@ -6,14 +6,15 @@ Appli pour créer des events (soirée au bar, sortie…) et y participer pour re
 
 ```
 Eventy/
-├── frontend/          → l'appli React + Vite (JavaScript / JSX)
+├── frontend/          → l'appli React + Vite (JavaScript / JSX), style en Tailwind CSS v4
 │   └── src/
-│       ├── App.jsx        → les routes (/, /connexion, /inscription, /accueil)
-│       ├── index.css      → couleurs, polices et boutons de la marque
+│       ├── App.jsx        → les routes (/, /connexion, /inscription, /accueil…)
+│       ├── index.css      → thème Tailwind : couleurs, polices et animations de la marque
 │       ├── api/           → appels à l'API backend
 │       ├── context/       → user connecté + token (AuthProvider, useAuth)
-│       ├── components/    → Logo, LogoAnime, AuthLayout…
-│       └── pages/         → Landing, Connexion, Inscription, Accueil
+│       ├── components/    → Bouton, Logo, LogoAnime, AuthLayout, Avatar…
+│       │   └── ui.js      → classes Tailwind partagées (champs, messages d'erreur…)
+│       └── pages/         → Landing, Connexion, Inscription, Bienvenue, Accueil…
 └── backend/           → l'API Node.js + Express
     ├── .env.example   → modèle du fichier .env
     └── src/
@@ -72,6 +73,20 @@ Le front tourne sur http://localhost:5173 et appelle l'API sur http://localhost:
 | GET | `/api/users/:id/avatar` | Affiche la photo d'un user (mise en cache 1 an, l'URL change à chaque nouvelle photo) | non |
 
 Pour les routes protégées, le front envoie l'en-tête `Authorization: Bearer <token>`.
+
+## Style (Tailwind CSS)
+
+Le front utilise **Tailwind CSS v4** (plugin `@tailwindcss/vite`). Les couleurs de la marque sont des classes comme les autres :
+
+| Couleur | Classes | Usage |
+|---|---|---|
+| Outremer `#3A3DFF` | `bg-outremer`, `text-outremer`… | couleur principale |
+| Lampion `#FFB21E` | `bg-lampion`… | la « place libre », bouton principal |
+| Grenadine, Menthe, Lilas | `bg-grenadine`, `bg-menthe`, `bg-lilas` | couleurs secondaires |
+| Ardoise, Gris, Nappe | `text-ardoise`, `text-gris`, `bg-nappe` | textes et fonds |
+
+Polices : `font-titre` (Bricolage Grotesque), `font-sans` (Manrope, par défaut), `font-mono` (DM Mono).
+Pour les boutons, utiliser le composant `<Bouton variante="lampion | outremer | contour | discret">`.
 
 ## Mot de passe oublié et sessions
 

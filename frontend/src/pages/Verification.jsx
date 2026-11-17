@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import AuthLayout from '../components/AuthLayout.jsx'
 import ChampCode from '../components/ChampCode.jsx'
+import Bouton from '../components/Bouton.jsx'
+import { ERREUR, FORMULAIRE, INFO, LIEN_BOUTON, TEXTE_BAS } from '../components/ui.js'
 import { renvoyerCode, verifierEmail } from '../api/auth.js'
 import { useAuth } from '../context/AuthContext.js'
 
@@ -69,7 +71,7 @@ export default function Verification() {
   if (!email) {
     return (
       <AuthLayout titre="Vérifie ton email" sousTitre="On ne sait pas encore quelle adresse vérifier." accroche="Il reste une place. C'est la tienne.">
-        <p className="auth-bas" style={{ textAlign: 'left' }}>
+        <p className={`${TEXTE_BAS} text-left!`}>
           Commence par <Link to="/inscription">créer ton compte</Link> ou <Link to="/connexion">te connecter</Link> : on t'enverra le code à ce moment-là.
         </p>
       </AuthLayout>
@@ -87,7 +89,7 @@ export default function Verification() {
       accroche="Plus qu'un code et ta place est réservée."
     >
       <form
-        className="form"
+        className={FORMULAIRE}
         onSubmit={(e) => {
           e.preventDefault()
           if (code.length === 6) verifier(code)
@@ -95,34 +97,34 @@ export default function Verification() {
         }}
       >
         {erreur && (
-          <p className="erreur" role="alert">
+          <p className={ERREUR} role="alert">
             {erreur}
           </p>
         )}
         {info && (
-          <p className="info" role="status">
+          <p className={INFO} role="status">
             {info}
           </p>
         )}
 
         <ChampCode valeur={code} onChange={changerCode} desactive={chargement} />
 
-        <button type="submit" className="btn btn-outremer" disabled={chargement}>
+        <Bouton type="submit" variante="outremer" className="mt-1.5 w-full" disabled={chargement}>
           {chargement ? 'Vérification…' : 'Valider le code'}
-        </button>
+        </Bouton>
       </form>
 
-      <p className="auth-bas">
+      <p className={TEXTE_BAS}>
         Pas reçu ?{' '}
         {attente > 0 ? (
           <span>Nouveau code possible dans {attente} s</span>
         ) : (
-          <button type="button" className="lien" onClick={renvoyer}>
+          <button type="button" className={LIEN_BOUTON} onClick={renvoyer}>
             Renvoyer un code
           </button>
         )}
       </p>
-      <p className="auth-bas" style={{ marginTop: 8 }}>
+      <p className={`${TEXTE_BAS} mt-2!`}>
         Mauvaise adresse ? <Link to="/inscription">Recommencer l'inscription</Link>
       </p>
     </AuthLayout>

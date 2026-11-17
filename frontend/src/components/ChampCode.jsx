@@ -2,6 +2,11 @@ import { useRef } from 'react'
 
 const LONGUEUR = 6
 
+const CASE =
+  'aspect-[4/5] max-h-[72px] w-full rounded-[14px] border-[1.5px] text-center font-mono text-[clamp(22px,5vw,30px)] font-medium text-outremer caret-outremer transition focus:border-outremer focus:outline-none focus:ring-4 focus:ring-outremer/15 disabled:opacity-60'
+// Une case remplie prend la forme d'une "place prise"
+const CASE_REMPLIE = '-translate-y-0.5 border-outremer bg-[#eef0ff]'
+
 // 6 cases pour taper le code reçu par email.
 // - on passe à la case suivante tout seul
 // - Retour arrière revient à la case d'avant
@@ -52,13 +57,13 @@ export default function ChampCode({ valeur, onChange, desactive }) {
   }
 
   return (
-    <div className="code-cases" role="group" aria-label="Code à 6 chiffres">
+    <div className="grid grid-cols-6 gap-2.5" role="group" aria-label="Code à 6 chiffres">
       {chiffres.map((chiffre, index) => (
         <input
           key={index}
           ref={(el) => (cases.current[index] = el)}
           id={`code-${index}`}
-          className={chiffre.trim() ? 'rempli' : ''}
+          className={`${CASE} ${chiffre.trim() ? CASE_REMPLIE : 'border-bordure bg-white'}`}
           inputMode="numeric"
           autoComplete={index === 0 ? 'one-time-code' : 'off'}
           aria-label={`Chiffre ${index + 1}`}
