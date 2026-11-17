@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { emojiAuHasard, couleurAuHasard } from "../config/avatars.js";
 
 // Un utilisateur de l'appli.
 // L'ID (_id) est créé automatiquement par MongoDB.
@@ -16,6 +17,17 @@ const userSchema = new mongoose.Schema(
     password: { type: String, required: true },
     date_naissance: { type: Date, required: true },
     role: { type: String, enum: ["user", "admin"], default: "user" },
+    // Passe à true quand le user a saisi le code reçu par email
+    email_verifie: { type: Boolean, default: false },
+    // Date du dernier changement de mot de passe : les tokens créés avant ne marchent plus
+    mdp_change_le: { type: Date, default: null },
+    // Photo de profil ou, par défaut, un emoji sur un rond de couleur
+    avatar: {
+      emoji: { type: String, default: emojiAuHasard },
+      couleur: { type: String, default: couleurAuHasard },
+      // Rempli quand le user a envoyé une photo (sert aussi à vider le cache du navigateur)
+      photo_version: { type: Number, default: null },
+    },
   },
   {
     // Ajoute createdAt (date de création) et updatedAt tout seul
@@ -27,6 +39,7 @@ const userSchema = new mongoose.Schema(
 userSchema.set("toJSON", {
   transform: (doc, ret) => {
     delete ret.password;
+    delete ret.mdp_change_le;
     return ret;
   },
 });
