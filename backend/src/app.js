@@ -6,7 +6,6 @@ import reservationRoutes from "./routes/reservationRoutes.js";
 import eventRoutes from "./routes/eventRoutes.js";
 import eventListRoutes from "./routes/eventListRoutes.js";
 
-
 const app = express();
 
 // En production, l'appli tourne derrière le proxy de l'hébergeur :
@@ -30,17 +29,13 @@ app.use("/api/auth", authRoutes);
 // Profil des users (photo de profil)
 app.use("/api/users", userRoutes);
 
-
 // Réservations du user connecté
 app.use("/api/reservations", reservationRoutes);
 
-// Events (inscrits pour le créateur)
-app.use("/api/events", eventRoutes);
-=======
-// Liste des événements (homepage)
+// Liste des événements (homepage) — avant les routes /:id
 app.use("/api/events", eventListRoutes);
 
-// Les autres routes (events, réservations) seront branchées ici.
-
+// Events (inscrits + modification pour le créateur)
+app.use("/api/events", eventRoutes);
 
 export default app;
