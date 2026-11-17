@@ -1,12 +1,12 @@
+
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
-// À adapter quand la personne qui fait la connexion aura décidé où stocker le JWT.
+// Récupère le token enregistré par AuthProvider
 function getToken() {
-  return localStorage.getItem("token");
+  return localStorage.getItem("eventy_token");
 }
 
-// Envoie un nouvel événement à l'API. Retourne l'événement créé.
-// En cas d'erreur HTTP, lance une Error avec .status et .errors (erreurs par champ).
+// Envoie un nouvel événement au backend
 export async function createEvent(eventData) {
   const token = getToken();
 
@@ -27,6 +27,7 @@ export async function createEvent(eventData) {
         ? "Vous devez être connecté pour créer un événement."
         : data.message || "Une erreur est survenue."
     );
+
     error.status = response.status;
     error.errors = data.errors || {};
     throw error;

@@ -64,3 +64,16 @@ export async function createEvent(req, res) {
     return res.status(500).json({ message: "Erreur serveur." });
   }
 }
+export async function getEvents(req, res) {
+  try {
+    const events = await Event.find()
+      .sort({ date_event: 1 });
+
+    res.status(200).json(events);
+  } catch (error) {
+    console.error("getEvents :", error.message);
+    res.status(500).json({
+      message: "Impossible de récupérer les événements."
+    });
+  }
+}
