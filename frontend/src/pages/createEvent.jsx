@@ -1,5 +1,5 @@
-
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { validateEvent } from "../utils/validateEvent";
 import { createEvent } from "../services/eventServices";
 import AppLayout from "../components/AppLayout.jsx";
@@ -27,6 +27,7 @@ const genres = [
 ];
 
 function CreateEvent() {
+  const navigate = useNavigate();
   const [form, setForm] = useState({ ...emptyForm });
   const [errors, setErrors] = useState({});
   const [serverError, setServerError] = useState("");
@@ -123,6 +124,9 @@ function CreateEvent() {
       setForm({ ...emptyForm });
       setErrors({});
       setImageError(false);
+
+      // Après création réussie (201), on va sur l'accueil
+      navigate("/accueil");
     } catch (err) {
       setServerError(
         err.message || "Erreur lors de la création."
