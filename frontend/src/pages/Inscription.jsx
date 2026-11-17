@@ -5,21 +5,7 @@ import ChampMotDePasse from '../components/ChampMotDePasse.jsx'
 import Bouton from '../components/Bouton.jsx'
 import { CHAMP, ERREUR, FORMULAIRE, INPUT, LABEL, TEXTE_BAS } from '../components/ui.js'
 import { inscrire } from '../api/auth.js'
-
-const AGE_MINIMUM = 18
-
-// Date au format AAAA-MM-JJ, "il y a X ans" jour pour jour
-function ilYA(annees) {
-  const d = new Date()
-  d.setFullYear(d.getFullYear() - annees)
-  const mois = String(d.getMonth() + 1).padStart(2, '0')
-  const jour = String(d.getDate()).padStart(2, '0')
-  return `${d.getFullYear()}-${mois}-${jour}`
-}
-
-// Plus jeune date de naissance acceptée : il faut avoir 18 ans aujourd'hui
-const DATE_MAX = ilYA(AGE_MINIMUM)
-const DATE_MIN = ilYA(120)
+import { DATE_NAISSANCE_MAX, DATE_NAISSANCE_MIN, erreurDateNaissance } from '../utils/dates.js'
 
 export default function Inscription() {
   const [form, setForm] = useState({ name: '', email: '', date_naissance: '', password: '' })
@@ -40,13 +26,9 @@ export default function Inscription() {
       setErreur('Le mot de passe doit faire au moins 6 caractères.')
       return
     }
-    // Les dates "AAAA-MM-JJ" se comparent directement comme du texte
-    if (form.date_naissance > DATE_MAX) {
-      setErreur(`Eventy est réservé aux personnes majeures (${AGE_MINIMUM} ans et plus).`)
-      return
-    }
-    if (form.date_naissance < DATE_MIN) {
-      setErreur('Vérifie ta date de naissance.')
+    const erreurDate = erreurDateNaissance(form.date_naissance)
+    if (erreurDate) {
+      setErreur(erreurDate)
       return
     }
 
@@ -99,8 +81,8 @@ export default function Inscription() {
             type="date"
             value={form.date_naissance}
             onChange={changer}
-            min={DATE_MIN}
-            max={DATE_MAX}
+            min={DATE_NAISSANCE_MIN}
+            max={DATE_NAISSANCE_MAX}
             autoComplete="bday"
             required
             className={INPUT}

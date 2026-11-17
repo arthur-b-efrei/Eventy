@@ -11,9 +11,11 @@ const VARIANTES = {
   outremer: 'border-transparent bg-outremer text-white hover:bg-outremer-fonce',
   contour: 'border-white/70 bg-transparent text-white hover:border-white hover:bg-white hover:text-outremer',
   discret: 'border-bordure bg-transparent text-ardoise',
+  // Pour les actions définitives (ex : supprimer son compte) : grenadine foncée, lisible en blanc
+  danger: 'border-transparent bg-[#d63a5a] text-white hover:bg-[#bf2e4c]',
 }
 
-// Le bouton de la marque, en 4 couleurs.
+// Le bouton de la marque : lampion, outremer, contour, discret ou danger.
 // Avec "to", il devient un lien vers une autre page de l'appli.
 export default function Bouton({ variante = 'outremer', to, className = '', type = 'button', ...props }) {
   const classes = `${BASE} ${VARIANTES[variante]} ${className}`
