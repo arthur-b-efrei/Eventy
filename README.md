@@ -123,3 +123,7 @@ Pour les boutons, utiliser le composant `<Bouton variante="lampion | outremer | 
 - **Event** : titre, describe, nb_user, nb_max_user, id_creator, localisation, date_event
 - **Reservation** : id_user, id_event, describe (message du participant), date d'inscription
 - **Log** (historique) : describe (l'action), id_event, id_user, date
+
+## Documentation
+
+- [Events à proximité (géolocalisation)](docs/geolocalisation.md) : comment montrer les events autour de l'utilisateur, façon Too Good To Go.
