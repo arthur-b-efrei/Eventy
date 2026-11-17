@@ -1,5 +1,6 @@
 
 import Event from "../models/Event.js";
+import { GeocodageIndisponible, geocoderAdresse } from "../services/geocodage.js";
 
 const GENRES = [
   "Autre",
@@ -123,12 +124,37 @@ export async function createEvent(req, res) {
       image,
     } = req.body;
 
+    // Adresse -> coordonnées, calculées ici par le serveur (on ne fait pas confiance au front).
+    // Elles servent à la recherche des events à proximité.
+    let lieu;
+    try {
+      lieu = await geocoderAdresse(localisation);
+    } catch (error) {
+      if (error instanceof GeocodageIndisponible) {
+        console.error("Géocodage :", error.message);
+        return res.status(503).json({
+          message: "Impossible de vérifier l'adresse pour le moment, réessaie dans un instant.",
+        });
+      }
+      throw error;
+    }
+    if (!lieu) {
+      return res.status(400).json({
+        message: "Données invalides.",
+        errors: {
+          localisation: "Adresse introuvable. Choisis une adresse dans la liste des suggestions.",
+        },
+      });
+    }
+
     // Création de l'événement
     const event = await Event.create({
       titre: titre.trim(),
       describe: describe.trim(),
       nb_max_user: Number(nb_max_user),
-      localisation: localisation.trim(),
+      // L'adresse officielle renvoyée par l'API (ex : "12 Rue Oberkampf 75011 Paris")
+      localisation: lieu.label,
+      position: { type: "Point", coordinates: lieu.coordinates },
       date_event: new Date(date_event),
 
       // Genre obligatoire

@@ -3,6 +3,7 @@ import { useState } from "react";
 import { validateEvent } from "../utils/validateEvent";
 import { createEvent } from "../services/eventServices";
 import AppLayout from "../components/AppLayout.jsx";
+import ChampAdresse from "../components/ChampAdresse.jsx";
 import "./createEvent.css";
 
 const emptyForm = {
@@ -339,17 +340,21 @@ function CreateEvent() {
 
             <div className="ce-field">
               <label htmlFor="localisation">
-                Localisation *
+                Adresse exacte *
               </label>
 
-              <input
+              {/* Suggestions d'adresses pendant la saisie : le serveur calcule
+                  ensuite les coordonnées pour la recherche "autour de moi" */}
+              <ChampAdresse
                 id="localisation"
                 name="localisation"
-                type="text"
                 required
                 value={form.localisation}
-                onChange={handleChange}
-                placeholder="Paris"
+                onChange={(texte) =>
+                  handleChange({ target: { name: "localisation", value: texte } })
+                }
+                placeholder="12 rue Oberkampf, Paris"
+                invalide={Boolean(errors.localisation)}
                 className={
                   errors.localisation ? "ce-invalid" : ""
                 }

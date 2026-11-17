@@ -3,6 +3,7 @@ import { MapPin, CalendarDays, Clock, Users } from "lucide-react";
 import Badge from "./ui/Badge.jsx";
 import Bouton from "./Bouton.jsx";
 import { getEventVisual } from "../utils/eventVisual.js";
+import { formaterDistance } from "../api/events.js";
 
 const dateFormat = new Intl.DateTimeFormat("fr-FR", {
   weekday: "long",
@@ -161,6 +162,12 @@ export default function EventCard({
             <span className="truncate">
               {event.localisation}
             </span>
+            {/* Distance, seulement en recherche "autour de moi" */}
+            {typeof event.distance === "number" && (
+              <span className="ml-auto shrink-0 rounded-full bg-violet-50 px-2 py-0.5 text-xs font-bold text-violet-700">
+                {formaterDistance(event.distance)}
+              </span>
+            )}
           </li>
 
           <li className="flex items-center gap-2.5">

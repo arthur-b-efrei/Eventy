@@ -74,6 +74,8 @@ Le front tourne sur http://localhost:5173 et appelle l'API sur http://localhost:
 | PUT | `/api/users/me/avatar` | Envoie sa photo de profil (`image` en data URL JPEG/PNG/WebP, 500 Ko max) | oui |
 | DELETE | `/api/users/me/avatar` | Supprime sa photo, retour à l'emoji | oui |
 | GET | `/api/users/:id/avatar` | Affiche la photo d'un user (mise en cache 1 an, l'URL change à chaque nouvelle photo) | non |
+| GET | `/api/events` | Liste des events. Avec `?lat=…&lng=…&rayon=…` (mètres, 10 km par défaut, 100 km max) : seulement ceux autour, du plus proche au plus loin, avec `distance` en mètres | non |
+| POST | `/api/events` | Crée un event. L'adresse (`localisation`) est géocodée par le serveur : introuvable → 400 `errors.localisation` | oui |
 
 Pour les routes protégées, le front envoie l'en-tête `Authorization: Bearer <token>`.
 
@@ -90,6 +92,16 @@ Le front utilise **Tailwind CSS v4** (plugin `@tailwindcss/vite`). Les couleurs 
 
 Polices : `font-titre` (Bricolage Grotesque), `font-sans` (Manrope, par défaut), `font-mono` (DM Mono).
 Pour les boutons, utiliser le composant `<Bouton variante="lampion | outremer | contour | discret">`.
+
+## Events à proximité (« Autour de moi »)
+
+Détails et choix techniques : [docs/geolocalisation.md](docs/geolocalisation.md).
+
+- **Créer un event** : le champ « Adresse exacte » propose des adresses pendant la saisie (composant `ChampAdresse`, API Adresse de la **Géoplateforme IGN**, gratuite et sans clé, France uniquement). À l'envoi, le **serveur** recalcule les coordonnées (`backend/src/services/geocodage.js`) et enregistre l'adresse officielle. Adresse introuvable ou trop approximative (score < 0,5) : l'event est refusé.
+- **Accueil** : bouton « Autour de moi » (position du navigateur) ou « choisir une ville » si la position est refusée, rayon de 2 à 25 km, distance affichée sur chaque carte (« à 650 m »).
+- **MongoDB** : champ `Event.position` au format GeoJSON (`[longitude, latitude]`, dans cet ordre !) avec un index `2dsphere`, et recherche avec `$geoNear`.
+- **RGPD** : la position de l'utilisateur sert seulement à la recherche, elle n'est jamais enregistrée.
+- **Events créés avant cette fonctionnalité** : ils n'ont pas de coordonnées et n'apparaissent pas dans « Autour de moi ». Pour les géocoder une fois : `cd backend && npm run geocoder:events` (les adresses introuvables sont listées à la fin).
 
 ## Mot de passe oublié et sessions
 
@@ -120,7 +132,7 @@ Pour les boutons, utiliser le composant `<Bouton variante="lampion | outremer | 
 - **CodeVerification** : id_user, but (verification ou reinitialisation), code_hash, tentatives, expire_le
 - **PhotoProfil** : id_user, type, data (l'image)
 - User.avatar : emoji, couleur, photo_version
-- **Event** : titre, describe, nb_user, nb_max_user, id_creator, localisation, date_event
+- **Event** : titre, describe, nb_user, nb_max_user, id_creator, localisation (adresse), position (coordonnées GeoJSON, index `2dsphere`), date_event, genre, image
 - **Reservation** : id_user, id_event, describe (message du participant), date d'inscription
 - **Log** (historique) : describe (l'action), id_event, id_user, date
 
