@@ -5,6 +5,9 @@ import Landing from './pages/Landing.jsx'
 import Connexion from './pages/Connexion.jsx'
 import Inscription from './pages/Inscription.jsx'
 import Accueil from './pages/Accueil.jsx'
+import MesReservations from './pages/MesReservations.jsx'
+import CreerEvenement from './pages/CreerEvenement.jsx'
+import Profil from './pages/Profil.jsx'
 import Verification from './pages/Verification.jsx'
 import Bienvenue from './pages/Bienvenue.jsx'
 import MotDePasseOublie from './pages/MotDePasseOublie.jsx'
@@ -36,6 +39,9 @@ export default function App() {
           <Route path="/verification" element={<RouteVisiteur redirection="/bienvenue"><Verification /></RouteVisiteur>} />
           <Route path="/bienvenue" element={<RouteConnectee><Bienvenue /></RouteConnectee>} />
           <Route path="/accueil" element={<RouteConnectee><Accueil /></RouteConnectee>} />
+          <Route path="/mes-reservations" element={<RouteConnectee><MesReservations /></RouteConnectee>} />
+          <Route path="/creer-evenement" element={<RouteConnectee><CreerEvenement /></RouteConnectee>} />
+          <Route path="/profil" element={<RouteConnectee><Profil /></RouteConnectee>} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>
