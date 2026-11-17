@@ -2,7 +2,10 @@ import express from "express";
 import cors from "cors";
 import authRoutes from "./routes/authRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
+import reservationRoutes from "./routes/reservationRoutes.js";
+import eventRoutes from "./routes/eventRoutes.js";
 import eventListRoutes from "./routes/eventListRoutes.js";
+
 
 const app = express();
 
@@ -27,9 +30,17 @@ app.use("/api/auth", authRoutes);
 // Profil des users (photo de profil)
 app.use("/api/users", userRoutes);
 
+
+// Réservations du user connecté
+app.use("/api/reservations", reservationRoutes);
+
+// Events (inscrits pour le créateur)
+app.use("/api/events", eventRoutes);
+=======
 // Liste des événements (homepage)
 app.use("/api/events", eventListRoutes);
 
 // Les autres routes (events, réservations) seront branchées ici.
+
 
 export default app;
