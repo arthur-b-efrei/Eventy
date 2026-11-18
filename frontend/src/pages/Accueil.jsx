@@ -1,5 +1,6 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import {
   Search,
   SearchX,
@@ -45,15 +46,40 @@ export default function Accueil() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [reloadKey, setReloadKey] = useState(0);
-  // Texte tapé dans la barre de recherche (change à chaque lettre)
-  const [query, setQuery] = useState("");
-  // Texte réellement envoyé au serveur (mis à jour quand on arrête de taper)
-  const [rechercheEnvoyee, setRechercheEnvoyee] = useState("");
-  // Genre sélectionné dans le filtre ("" = Tous)
-  const [genre, setGenre] = useState("");
 
-  // Pagination : page affichée, et infos renvoyées par le serveur
-  const [page, setPage] = useState(1);
+  // Page, recherche et genre sont rangés dans l'URL du navigateur :
+  //   /?page=2&recherche=jazz&genre=Musique
+  // -> on garde sa position après F5, on peut partager le lien,
+  //    et le bouton "Retour" du navigateur revient à la page précédente.
+  const [searchParams, setSearchParams] = useSearchParams();
+  // L'URL ne contient que du texte : on le convertit en nombre (1 si absent ou invalide)
+  const page = Math.max(1, Number(searchParams.get("page")) || 1);
+  const rechercheEnvoyee = searchParams.get("recherche") || "";
+  const genre = searchParams.get("genre") || ""; // "" = Tous
+
+  // Modifier l'URL. Une valeur vide (ou la page 1) est retirée pour garder une URL propre.
+  // replace = true : remplace l'entrée de l'historique au lieu d'en ajouter une
+  function majUrl(changements, replace = false) {
+    const params = new URLSearchParams(searchParams);
+    for (const [cle, valeur] of Object.entries(changements)) {
+      if (!valeur || (cle === "page" && valeur === 1)) params.delete(cle);
+      else params.set(cle, valeur);
+    }
+    setSearchParams(params, { replace });
+  }
+
+  // Texte tapé dans la barre de recherche (change à chaque lettre),
+  // pré-rempli avec la recherche de l'URL
+  const [query, setQuery] = useState(rechercheEnvoyee);
+  // Si la recherche de l'URL change sans qu'on tape (bouton "Retour"),
+  // on remet le bon texte dans la barre de recherche
+  const [rechercheAffichee, setRechercheAffichee] = useState(rechercheEnvoyee);
+  if (rechercheEnvoyee !== rechercheAffichee) {
+    setRechercheAffichee(rechercheEnvoyee);
+    setQuery(rechercheEnvoyee);
+  }
+
+  // Pagination : nombre de pages, renvoyé par le serveur
   const [pages, setPages] = useState(1);
   const [total, setTotal] = useState(0);
 
@@ -88,8 +114,9 @@ export default function Accueil() {
     if (texte === rechercheEnvoyee) return;
 
     const minuteur = setTimeout(() => {
-      setRechercheEnvoyee(texte);
-      setPage(1); // nouvelle recherche -> on repart de la page 1
+      // nouvelle recherche -> on repart de la page 1
+      // (replace : pas une entrée d'historique par recherche tapée)
+      majUrl({ recherche: texte, page: 1 }, true);
       setLoading(true);
     }, 400);
 
@@ -147,15 +174,14 @@ export default function Accueil() {
   // Clic sur un genre : nouveau filtre -> on repart de la page 1
   function choisirGenre(g) {
     if (g === genre) return;
-    setGenre(g);
-    setPage(1);
+    majUrl({ genre: g, page: 1 });
     setLoading(true);
   }
 
   // Clic sur une page (Précédent, numéro, Suivant)
   function allerPage(p) {
     if (p === page || p < 1 || p > pages) return;
-    setPage(p);
+    majUrl({ page: p });
     setLoading(true);
     window.scrollTo({ top: 0, behavior: "smooth" }); // remonter en haut de la liste
   }
@@ -163,9 +189,7 @@ export default function Accueil() {
   // Bouton "Effacer les filtres"
   function effacerFiltres() {
     setQuery("");
-    setRechercheEnvoyee("");
-    setGenre("");
-    setPage(1);
+    setSearchParams({}); // URL vide = page 1, sans recherche ni genre
     setLoading(true);
   }
 
