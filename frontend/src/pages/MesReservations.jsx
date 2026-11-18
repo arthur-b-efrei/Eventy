@@ -322,6 +322,9 @@ function CarteReservation({ item, onMaj, onMajEvent, onSupprime, onSupprimeEvent
       {erreur ? <p className={`${ERREUR} mt-3`}>{erreur}</p> : null}
 
       <div className="mt-5 flex flex-wrap gap-2">
+        <Bouton variante="outremer" className="min-h-10 px-4 text-sm" to={`/evenements/${event._id}/discussion`}>
+          Discussion
+        </Bouton>
         {!editionMessage ? (
           <Bouton
             variante="discret"

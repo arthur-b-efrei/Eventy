@@ -4,6 +4,8 @@ import PhotoProfil from "../models/PhotoProfil.js";
 import CodeVerification from "../models/CodeVerification.js";
 import Event from "../models/Event.js";
 import Reservation from "../models/Reservation.js";
+import Message from "../models/Message.js";
+import { deconnecterUser, fermerLaDiscussion } from "../socket.js";
 import Log from "../models/Log.js";
 import { erreurDateNaissance } from "../utils/age.js";
 import { creerToken } from "../utils/token.js";
@@ -101,11 +103,15 @@ export async function supprimerCompte(req, res) {
     await Promise.all([
       Reservation.deleteMany({ $or: [{ id_user: user._id }, { id_event: { $in: idsEvents } }] }),
       Log.deleteMany({ $or: [{ id_user: user._id }, { id_event: { $in: idsEvents } }] }),
+      // Ses messages, et les discussions de ses events
+      Message.deleteMany({ $or: [{ id_user: user._id }, { id_event: { $in: idsEvents } }] }),
       Event.deleteMany({ _id: { $in: idsEvents } }),
       PhotoProfil.deleteOne({ id_user: user._id }),
       CodeVerification.deleteMany({ id_user: user._id }),
     ]);
     await User.deleteOne({ _id: user._id });
+    idsEvents.forEach((id) => fermerLaDiscussion(id));
+    deconnecterUser(user._id.toString());
 
     res.json({ message: "Compte supprimé" });
   } catch (error) {

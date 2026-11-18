@@ -110,6 +110,21 @@ Détails et choix techniques : [docs/geolocalisation.md](docs/geolocalisation.md
 - Le middleware `protect` vérifie aussi que le compte existe toujours.
 - Côté front, si le serveur refuse le token (expiré, mot de passe changé…), l'appli déconnecte le user et l'envoie sur la connexion avec le message « Ta session a expiré ». Le token est aussi vérifié à l'ouverture de l'appli.
 
+## Discussion de groupe (WebSocket)
+
+Chaque event a sa messagerie de groupe, ouverte avec le bouton « Discussion » de **Mes réservations** (page `/evenements/:id/discussion`).
+
+| Méthode | Adresse | Rôle | Token ? |
+|---|---|---|---|
+| GET | `/api/events/:id/messages` | Discussion d'un event : les 50 derniers messages (`?avant=<id>` pour les précédents) → `event`, `messages`, `encoreAvant`. Créateur et inscrits uniquement, sinon 404 | oui |
+
+- **Qui ?** Le créateur de l'event et les inscrits. Les droits sont revérifiés à chaque message : quelqu'un qui se désinscrit sort tout de suite de la discussion.
+- **Comment ?** L'historique est chargé par l'API (`GET /api/events/:id/messages`), puis le direct passe par **Socket.IO** sur le même port que l'API (`backend/src/socket.js`). Le front envoie son token à la connexion : `io(url, { auth: { token } })`. Il est vérifié comme dans `protect`.
+- **Messages Socket.IO** : `rejoindre` (eventId), `message` ({ eventId, texte }, 500 caractères max), `ecrit` (« Léa écrit… », rien n'est enregistré), et côté serveur `discussion-fermee` (désinscription ou event supprimé).
+- **Anti-spam** : 5 messages maximum toutes les 5 secondes par connexion.
+- **Suppression** : supprimer un event supprime sa discussion ; supprimer son compte supprime ses messages.
+- **Hébergement** : il faut un serveur Node qui reste allumé (Render, Railway, VPS…). Les hébergeurs « serverless » (Vercel, Netlify Functions) ne gardent pas les WebSockets ouverts.
+
 ## Avatar et photo de profil
 
 - À l'inscription, chaque user reçoit un **avatar emoji** tiré au hasard sur un rond aux couleurs de la marque, comme les avatars par défaut de Discord.
@@ -135,6 +150,7 @@ Détails et choix techniques : [docs/geolocalisation.md](docs/geolocalisation.md
 - **Event** : titre, describe, nb_user, nb_max_user, id_creator, localisation (adresse), position (coordonnées GeoJSON, index `2dsphere`), date_event, genre, image
 - **Reservation** : id_user, id_event, describe (message du participant), date d'inscription
 - **Log** (historique) : describe (l'action), id_event, id_user, date
+- **Message** : id_event, id_user, texte, date d'envoi (discussion de groupe d'un event)
 
 ## Documentation
 
