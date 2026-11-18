@@ -191,7 +191,7 @@ export async function supprimerEvenement(req, res) {
 }
 
 // GET /api/events/:id/inscrits — liste des participants (créateur et inscrits, sinon 404).
-// Les emails ne sont renvoyés qu'au créateur.
+// Les emails ne sont jamais renvoyés, même au créateur (vie privée des participants).
 export async function listerInscrits(req, res) {
   try {
     const { id } = req.params;
@@ -214,7 +214,7 @@ export async function listerInscrits(req, res) {
 
     const userIds = reservations.map((r) => r.id_user);
     const users = await User.find({ _id: { $in: userIds } })
-      .select("name email avatar")
+      .select("name avatar")
       .lean();
     const parId = new Map(users.map((u) => [u._id.toString(), u]));
 
@@ -229,8 +229,6 @@ export async function listerInscrits(req, res) {
           ? {
               _id: user._id,
               name: user.name,
-              // L'email n'est montré qu'au créateur de l'event (vie privée des participants)
-              ...(estCreateur ? { email: user.email } : {}),
               avatar: user.avatar,
             }
           : null,

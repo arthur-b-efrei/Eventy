@@ -76,7 +76,7 @@ Le front tourne sur http://localhost:5173 et appelle l'API sur http://localhost:
 | GET | `/api/users/:id/avatar` | Affiche la photo d'un user (mise en cache 1 an, l'URL change à chaque nouvelle photo) | non |
 | GET | `/api/events` | Liste des events. Avec `?lat=…&lng=…&rayon=…` (mètres, 10 km par défaut, 100 km max) : seulement ceux autour, du plus proche au plus loin, avec `distance` en mètres | non |
 | POST | `/api/events` | Crée un event. L'adresse (`localisation`) est géocodée par le serveur : introuvable → 400 `errors.localisation` | oui |
-| GET | `/api/events/:id/inscrits` | Participants d'un event (prénom, avatar, `estCreateur`). Créateur et inscrits uniquement, sinon 404. **Les emails ne sont renvoyés qu'au créateur** | oui |
+| GET | `/api/events/:id/inscrits` | Participants d'un event (prénom, avatar, `estCreateur`). Créateur et inscrits uniquement, sinon 404. **Les emails ne sont jamais renvoyés**, même au créateur | oui |
 
 Pour les routes protégées, le front envoie l'en-tête `Authorization: Bearer <token>`.
 

@@ -93,8 +93,6 @@ function PanneauInscrits({ eventId, ouvert }) {
                       </span>
                     ) : null}
                   </p>
-                  {/* L'email n'est envoyé par le serveur qu'au créateur de l'event */}
-                  {item.user?.email ? <p className="text-sm text-texte-doux">{item.user.email}</p> : null}
                 </div>
               </div>
             </li>
@@ -315,7 +313,7 @@ function CarteReservation({ item, onMajEvent, onSupprime, onSupprimeEvent }) {
         ) : null}
       </div>
 
-      {/* Tous les participants peuvent voir la liste ; seul le créateur voit les emails */}
+      {/* Tous les participants peuvent voir la liste (prénom et avatar, jamais l'email) */}
       <PanneauInscrits eventId={event._id} ouvert={inscritsOuverts} />
     </li>
   )
