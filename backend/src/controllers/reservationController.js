@@ -190,7 +190,8 @@ export async function supprimerEvenement(req, res) {
   }
 }
 
-// GET /api/events/:id/inscrits — liste des inscrits (créateur uniquement, sinon 404)
+// GET /api/events/:id/inscrits — liste des participants (créateur et inscrits, sinon 404).
+// Les emails ne sont renvoyés qu'au créateur.
 export async function listerInscrits(req, res) {
   try {
     const { id } = req.params;
@@ -199,8 +200,11 @@ export async function listerInscrits(req, res) {
     }
 
     const event = await Event.findById(id).lean();
-    // Pas créateur → 404 (on ne révèle pas l'existence de l'event)
-    if (!event || event.id_creator.toString() !== req.user.id) {
+    // Accès : le créateur et les inscrits. Les autres → 404 (on ne révèle pas l'existence de l'event)
+    const estCreateur = Boolean(event) && event.id_creator.toString() === req.user.id;
+    const estInscrit =
+      Boolean(event) && !estCreateur && Boolean(await Reservation.exists({ id_user: req.user.id, id_event: id }));
+    if (!estCreateur && !estInscrit) {
       return res.status(404).json({ message: "Événement introuvable" });
     }
 
@@ -219,11 +223,14 @@ export async function listerInscrits(req, res) {
       return {
         _id: reservation._id,
         createdAt: reservation.createdAt,
+        // Pour afficher le badge "Organisateur" dans la liste
+        estCreateur: reservation.id_user.toString() === event.id_creator.toString(),
         user: user
           ? {
               _id: user._id,
               name: user.name,
-              email: user.email,
+              // L'email n'est montré qu'au créateur de l'event (vie privée des participants)
+              ...(estCreateur ? { email: user.email } : {}),
               avatar: user.avatar,
             }
           : null,

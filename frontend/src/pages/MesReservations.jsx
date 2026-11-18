@@ -32,7 +32,7 @@ function versInputDate(valeur) {
 }
 
 function PanneauInscrits({ eventId, ouvert }) {
-  const { token } = useAuth()
+  const { token, user: moi } = useAuth()
   const [items, setItems] = useState([])
   const [chargement, setChargement] = useState(false)
   const [erreur, setErreur] = useState('')
@@ -64,7 +64,9 @@ function PanneauInscrits({ eventId, ouvert }) {
 
   return (
     <div className="mt-4 border-t border-bordure pt-4">
-      <h3 className="font-titre text-lg tracking-[-0.02em]">Inscrits</h3>
+      <h3 className="font-titre text-lg tracking-[-0.02em]">
+        Participants{items.length > 0 ? ` (${items.length})` : ''}
+      </h3>
       {chargement ? <p className="mt-2 text-sm text-texte-doux">Chargement…</p> : null}
       {erreur ? <p className={`${ERREUR} mt-2`}>{erreur}</p> : null}
       {!chargement && !erreur && items.length === 0 ? (
@@ -80,8 +82,19 @@ function PanneauInscrits({ eventId, ouvert }) {
               <div className="flex items-center gap-3">
                 <Avatar user={item.user} taille={36} />
                 <div>
-                  <p className="font-bold">{item.user?.name || 'Utilisateur inconnu'}</p>
-                  <p className="text-sm text-texte-doux">{item.user?.email || '—'}</p>
+                  <p className="flex flex-wrap items-center gap-2 font-bold">
+                    {item.user?.name || 'Compte supprimé'}
+                    {item.user?._id && item.user._id === moi?._id ? (
+                      <span className="text-sm font-semibold text-texte-doux">(toi)</span>
+                    ) : null}
+                    {item.estCreateur ? (
+                      <span className="rounded-full bg-lampion/20 px-2 py-0.5 text-[11px] font-bold uppercase tracking-[0.04em] text-[#8a3d12]">
+                        Organisateur
+                      </span>
+                    ) : null}
+                  </p>
+                  {/* L'email n'est envoyé par le serveur qu'au créateur de l'event */}
+                  {item.user?.email ? <p className="text-sm text-texte-doux">{item.user.email}</p> : null}
                 </div>
               </div>
             </li>
@@ -274,15 +287,14 @@ function CarteReservation({ item, onMajEvent, onSupprime, onSupprimeEvent }) {
             Modifier l’événement
           </Bouton>
         ) : null}
-        {item.estCreateur ? (
-          <Bouton
-            variante="discret"
-            className="min-h-10 px-4 text-sm"
-            onClick={() => setInscritsOuverts((v) => !v)}
-          >
-            {inscritsOuverts ? 'Masquer les inscrits' : 'Voir les inscrits'}
-          </Bouton>
-        ) : null}
+        <Bouton
+          variante="discret"
+          className="min-h-10 px-4 text-sm"
+          aria-expanded={inscritsOuverts}
+          onClick={() => setInscritsOuverts((v) => !v)}
+        >
+          {inscritsOuverts ? 'Masquer les participants' : 'Voir les participants'}
+        </Bouton>
         <Bouton
           variante="outremer"
           className="min-h-10 bg-grenadine! px-4 text-sm hover:bg-[#e94b68]!"
@@ -303,7 +315,8 @@ function CarteReservation({ item, onMajEvent, onSupprime, onSupprimeEvent }) {
         ) : null}
       </div>
 
-      {item.estCreateur ? <PanneauInscrits eventId={event._id} ouvert={inscritsOuverts} /> : null}
+      {/* Tous les participants peuvent voir la liste ; seul le créateur voit les emails */}
+      <PanneauInscrits eventId={event._id} ouvert={inscritsOuverts} />
     </li>
   )
 }
@@ -336,8 +349,8 @@ export default function MesReservations() {
     <AppLayout>
       <h1 className="text-[clamp(28px,4.5vw,44px)]">Mes réservations</h1>
       <p className="mt-3 max-w-[40rem] text-texte-doux">
-        Retrouve les événements auxquels tu es inscrit·e, modifie ton message ou annule ta place.
-        Si tu es le créateur, tu peux aussi modifier ou supprimer l’événement et voir les inscrits.
+        Retrouve les événements auxquels tu es inscrit·e, discute avec les autres participants,
+        vois qui vient ou annule ta place. Si tu es le créateur, tu peux aussi modifier ou supprimer l’événement.
       </p>
 
       {erreur ? <p className={`${ERREUR} mt-5`}>{erreur}</p> : null}
