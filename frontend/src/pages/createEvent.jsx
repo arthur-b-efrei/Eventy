@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { validateEvent } from "../utils/validateEvent";
+import { preparerImageEvenement } from "../utils/image.js";
 import { createEvent } from "../services/eventServices";
 import AppLayout from "../components/AppLayout.jsx";
 import ChampAdresse from "../components/ChampAdresse.jsx";
@@ -13,7 +14,7 @@ const emptyForm = {
   localisation: "",
   date_event: "",
   genre: "",
-  image: "",
+  image: "", // data URL JPEG après compression, ou vide
 };
 
 const genres = [
@@ -34,7 +35,8 @@ function CreateEvent() {
   const [serverError, setServerError] = useState("");
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
-  const [imageError, setImageError] = useState(false);
+  const [imageEnCours, setImageEnCours] = useState(false);
+  const champImage = useRef(null);
 
   function handleChange(e) {
     const { name, value } = e.target;
@@ -49,12 +51,34 @@ function CreateEvent() {
       [name]: undefined,
     }));
 
-    if (name === "image") {
-      setImageError(false);
-    }
-
     setSuccess("");
     setServerError("");
+  }
+
+  async function choisirImage(fichier) {
+    if (!fichier) return;
+    setImageEnCours(true);
+    setErrors((prev) => ({ ...prev, image: undefined }));
+    setServerError("");
+    setSuccess("");
+    try {
+      const dataUrl = await preparerImageEvenement(fichier);
+      setForm((prev) => ({ ...prev, image: dataUrl }));
+    } catch (err) {
+      setForm((prev) => ({ ...prev, image: "" }));
+      setErrors((prev) => ({
+        ...prev,
+        image: err.message || "Impossible de lire cette image.",
+      }));
+    } finally {
+      setImageEnCours(false);
+    }
+  }
+
+  function retirerImage() {
+    setForm((prev) => ({ ...prev, image: "" }));
+    setErrors((prev) => ({ ...prev, image: undefined }));
+    if (champImage.current) champImage.current.value = "";
   }
 
   async function handleSubmit(e) {
@@ -67,34 +91,12 @@ function CreateEvent() {
       ...validateEvent(form),
     };
 
-    // L'image est facultative :
-    // on retire toute erreur "image obligatoire"
-    // provenant de l'ancienne validation.
+    // L'image est facultative
     delete validationErrors.image;
 
     if (!form.genre || form.genre === "Autre") {
       validationErrors.genre =
         "Veuillez sélectionner un genre.";
-    }
-
-    // Vérifier l'URL uniquement si une image est fournie
-    if (form.image.trim()) {
-      try {
-        const url = new URL(form.image.trim());
-
-        if (!["http:", "https:"].includes(url.protocol)) {
-          validationErrors.image =
-            "Veuillez saisir une URL HTTP ou HTTPS.";
-        }
-      } catch {
-        validationErrors.image =
-          "Veuillez saisir une URL d'image valide.";
-      }
-
-      if (imageError) {
-        validationErrors.image =
-          "Impossible de charger cette image. Vérifie son URL.";
-      }
     }
 
     if (Object.keys(validationErrors).length > 0) {
@@ -124,7 +126,7 @@ function CreateEvent() {
 
       setForm({ ...emptyForm });
       setErrors({});
-      setImageError(false);
+      if (champImage.current) champImage.current.value = "";
 
       // Après création réussie (201), on va sur l'accueil
       navigate("/accueil");
@@ -266,26 +268,55 @@ function CreateEvent() {
             </p>
           </div>
 
-          {/* IMAGE FACULTATIVE */}
+          {/* IMAGE FACULTATIVE — fichier du PC */}
           <div className="ce-field">
-            <label htmlFor="image">
+            <span className="ce-label-like" id="image-label">
               Image de l'événement (facultatif)
-            </label>
+            </span>
 
             <input
+              ref={champImage}
               id="image"
               name="image"
-              type="url"
-              value={form.image}
-              onChange={handleChange}
-              placeholder="https://exemple.com/image.jpg"
-              className={errors.image ? "ce-invalid" : ""}
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/*"
+              hidden
+              aria-labelledby="image-label"
+              onChange={(e) => {
+                choisirImage(e.target.files?.[0]);
+                e.target.value = "";
+              }}
             />
 
+            <div className="ce-image-actions">
+              <button
+                type="button"
+                className="ce-button-secondary"
+                disabled={imageEnCours || loading}
+                onClick={() => champImage.current?.click()}
+              >
+                {imageEnCours
+                  ? "Préparation…"
+                  : form.image
+                    ? "Changer l'image"
+                    : "Choisir une image"}
+              </button>
+
+              {form.image && (
+                <button
+                  type="button"
+                  className="ce-button-ghost"
+                  disabled={imageEnCours || loading}
+                  onClick={retirerImage}
+                >
+                  Retirer
+                </button>
+              )}
+            </div>
+
             <p className="ce-help">
-              Tu peux ajouter une URL d'image pour
-              illustrer ton événement, ou laisser
-              ce champ vide.
+              JPEG, PNG ou WebP depuis ton ordinateur.
+              L'image est compressée avant l'envoi.
             </p>
 
             {errors.image && (
@@ -294,22 +325,13 @@ function CreateEvent() {
               </span>
             )}
 
-            {/* Aperçu uniquement si une image est fournie */}
-            {form.image.trim() && !imageError && (
+            {form.image && (
               <div className="ce-image-preview">
                 <img
-                  src={form.image.trim()}
+                  src={form.image}
                   alt="Aperçu de l'événement"
-                  onError={() => setImageError(true)}
                 />
               </div>
-            )}
-
-            {form.image.trim() && imageError && (
-              <p className="ce-error">
-                Impossible d'afficher cette image.
-                Vérifie son URL.
-              </p>
             )}
           </div>
 
