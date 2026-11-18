@@ -149,7 +149,7 @@ Chaque event a sa messagerie de groupe, ouverte avec le bouton « Discussion » 
 - **PhotoProfil** : id_user, type, data (l'image)
 - User.avatar : emoji, couleur, photo_version
 - **Event** : titre, describe, nb_user, nb_max_user, id_creator, localisation (adresse), position (coordonnées GeoJSON, index `2dsphere`), date_event, genre, image
-- **Reservation** : id_user, id_event, describe (message du participant), date d'inscription
+- **Reservation** : id_user, id_event, date d'inscription (pour échanger entre participants : la discussion de groupe)
 - **Log** (historique) : describe (l'action), id_event, id_user, date
 - **Message** : id_event, id_user, texte, date d'envoi (discussion de groupe d'un event)
 

@@ -15,17 +15,6 @@ export function listerMesReservations(token) {
   return requete('/reservations', avecToken(token))
 }
 
-// Modifier le message de la réservation
-export function modifierReservation(token, id, describe) {
-  return requete(
-    `/reservations/${id}`,
-    avecToken(token, {
-      method: 'PATCH',
-      body: JSON.stringify({ describe }),
-    }),
-  )
-}
-
 // Annuler une réservation
 export function annulerReservation(token, id) {
   return requete(

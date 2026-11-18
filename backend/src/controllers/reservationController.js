@@ -17,7 +17,6 @@ function formaterReservation(reservation, userId) {
   const createurId = event.id_creator?.toString?.() || String(event.id_creator);
   return {
     _id: reservation._id,
-    describe: reservation.describe || "",
     createdAt: reservation.createdAt,
     estCreateur: createurId === userId,
     event: {
@@ -49,49 +48,6 @@ export async function listerMesReservations(req, res) {
   } catch (error) {
     console.error("listerMesReservations :", error.message);
     res.status(500).json({ message: "Impossible de charger tes réservations." });
-  }
-}
-
-// PATCH /api/reservations/:id — modifier le message (describe) de sa réservation
-export async function modifierReservation(req, res) {
-  try {
-    const { id } = req.params;
-    if (!idValide(id)) {
-      return res.status(400).json({ message: "Identifiant invalide" });
-    }
-
-    if (req.body.describe === undefined) {
-      return res.status(400).json({ message: "Le champ describe est obligatoire" });
-    }
-
-    if (typeof req.body.describe !== "string") {
-      return res.status(400).json({ message: "describe doit être une chaîne" });
-    }
-
-    const describe = req.body.describe.trim();
-    if (describe.length > 500) {
-      return res.status(400).json({ message: "Le message est trop long (500 caractères max)" });
-    }
-
-    // Champs inconnus refusés (contrat PATCH partiel strict)
-    const champs = Object.keys(req.body);
-    if (champs.some((champ) => champ !== "describe")) {
-      return res.status(400).json({ message: "Seul le champ describe peut être modifié" });
-    }
-
-    const reservation = await Reservation.findById(id);
-    if (!reservation || reservation.id_user.toString() !== req.user.id) {
-      return res.status(404).json({ message: "Réservation introuvable" });
-    }
-
-    reservation.describe = describe;
-    await reservation.save();
-
-    const complete = await Reservation.findById(reservation._id).populate("id_event").lean();
-    res.json(formaterReservation(complete, req.user.id));
-  } catch (error) {
-    console.error("modifierReservation :", error.message);
-    res.status(500).json({ message: "Impossible de modifier la réservation." });
   }
 }
 
@@ -262,7 +218,6 @@ export async function listerInscrits(req, res) {
       const user = parId.get(reservation.id_user.toString());
       return {
         _id: reservation._id,
-        describe: reservation.describe || "",
         createdAt: reservation.createdAt,
         user: user
           ? {

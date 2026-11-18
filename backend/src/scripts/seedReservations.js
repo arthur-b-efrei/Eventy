@@ -86,13 +86,13 @@ const atelier = await Event.create({
 });
 
 const reservations = [
-  { id_event: jazz._id, id_user: alice._id, describe: "J’apporte des amis !" },
-  { id_event: jazz._id, id_user: bob._id, describe: "" },
-  { id_event: jazz._id, id_user: claire._id, describe: "Arrivée vers 20h30" },
-  { id_event: trail._id, id_user: alice._id, describe: "Première course, soyez indulgents" },
-  { id_event: trail._id, id_user: claire._id, describe: "" },
-  { id_event: atelier._id, id_user: alice._id, describe: "Je viens avec mon appareil" },
-  { id_event: atelier._id, id_user: bob._id, describe: "" },
+  { id_event: jazz._id, id_user: alice._id },
+  { id_event: jazz._id, id_user: bob._id },
+  { id_event: jazz._id, id_user: claire._id },
+  { id_event: trail._id, id_user: alice._id },
+  { id_event: trail._id, id_user: claire._id },
+  { id_event: atelier._id, id_user: alice._id },
+  { id_event: atelier._id, id_user: bob._id },
 ];
 
 await Reservation.insertMany(reservations);

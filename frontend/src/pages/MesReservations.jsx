@@ -8,7 +8,6 @@ import {
   listerInscrits,
   listerMesReservations,
   modifierEvenement,
-  modifierReservation,
   supprimerEvenement,
 } from '../api/reservations.js'
 import { CHAMP, ERREUR, INPUT, LABEL } from '../components/ui.js'
@@ -85,9 +84,6 @@ function PanneauInscrits({ eventId, ouvert }) {
                   <p className="text-sm text-texte-doux">{item.user?.email || '—'}</p>
                 </div>
               </div>
-              {item.describe ? (
-                <p className="max-w-full text-sm text-texte-doux sm:max-w-[45%]">« {item.describe} »</p>
-              ) : null}
             </li>
           ))}
         </ul>
@@ -187,28 +183,12 @@ function FormulaireEvent({ event, onAnnuler, onSauve }) {
   )
 }
 
-function CarteReservation({ item, onMaj, onMajEvent, onSupprime, onSupprimeEvent }) {
+function CarteReservation({ item, onMajEvent, onSupprime, onSupprimeEvent }) {
   const { token } = useAuth()
-  const [message, setMessage] = useState(item.describe || '')
-  const [editionMessage, setEditionMessage] = useState(false)
   const [editionEvent, setEditionEvent] = useState(false)
   const [inscritsOuverts, setInscritsOuverts] = useState(false)
   const [action, setAction] = useState('')
   const [erreur, setErreur] = useState('')
-
-  async function sauverMessage() {
-    setErreur('')
-    setAction('patch')
-    try {
-      const maj = await modifierReservation(token, item._id, message)
-      onMaj(maj)
-      setEditionMessage(false)
-    } catch (err) {
-      setErreur(err.message)
-    } finally {
-      setAction('')
-    }
-  }
 
   async function annuler() {
     const ok = window.confirm('Annuler cette réservation ? Cette action est définitive.')
@@ -268,46 +248,6 @@ function CarteReservation({ item, onMaj, onMajEvent, onSupprime, onSupprimeEvent
 
       {event.describe ? <p className="mt-3 text-texte-doux">{event.describe}</p> : null}
 
-      <div className="mt-4">
-        <p className={LABEL}>Ton message</p>
-        {editionMessage ? (
-          <div className="mt-1.5 grid gap-2">
-            <textarea
-              className={`${INPUT} h-auto min-h-[88px] resize-y py-3`}
-              value={message}
-              maxLength={500}
-              onChange={(e) => setMessage(e.target.value)}
-              placeholder="Ex : j’arrive vers 21h"
-            />
-            <div className="flex flex-wrap gap-2">
-              <Bouton
-                variante="outremer"
-                className="min-h-10 px-4 text-sm"
-                disabled={action === 'patch'}
-                onClick={() => void sauverMessage()}
-              >
-                {action === 'patch' ? 'Enregistrement…' : 'Enregistrer'}
-              </Bouton>
-              <Bouton
-                variante="discret"
-                className="min-h-10 px-4 text-sm"
-                onClick={() => {
-                  setMessage(item.describe || '')
-                  setEditionMessage(false)
-                  setErreur('')
-                }}
-              >
-                Annuler
-              </Bouton>
-            </div>
-          </div>
-        ) : (
-          <p className="mt-1 text-texte-doux">
-            {item.describe?.trim() ? `« ${item.describe} »` : 'Aucun message pour l’instant.'}
-          </p>
-        )}
-      </div>
-
       {item.estCreateur && editionEvent ? (
         <FormulaireEvent
           event={event}
@@ -325,15 +265,6 @@ function CarteReservation({ item, onMaj, onMajEvent, onSupprime, onSupprimeEvent
         <Bouton variante="outremer" className="min-h-10 px-4 text-sm" to={`/evenements/${event._id}/discussion`}>
           Discussion
         </Bouton>
-        {!editionMessage ? (
-          <Bouton
-            variante="discret"
-            className="min-h-10 px-4 text-sm"
-            onClick={() => setEditionMessage(true)}
-          >
-            Modifier mon message
-          </Bouton>
-        ) : null}
         {item.estCreateur && !editionEvent ? (
           <Bouton
             variante="discret"
@@ -426,9 +357,6 @@ export default function MesReservations() {
           <CarteReservation
             key={item._id}
             item={item}
-            onMaj={(maj) =>
-              setItems((prev) => prev.map((r) => (r._id === maj._id ? maj : r)))
-            }
             onMajEvent={(event) =>
               setItems((prev) =>
                 prev.map((r) =>
