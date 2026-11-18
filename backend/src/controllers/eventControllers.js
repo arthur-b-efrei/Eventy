@@ -1,5 +1,5 @@
-
 import Event from "../models/Event.js";
+import Reservation from "../models/Reservation.js";
 
 const GENRES = [
   "Autre",
@@ -139,9 +139,16 @@ export async function createEvent(req, res) {
         ? image.trim()
         : "",
 
-      // Données définies par le serveur
-      nb_user: 0,
+      // Le créateur est automatiquement inscrit
+      nb_user: 1,
       id_creator: req.user.id,
+    });
+
+    // Réservation du créateur : l'event apparaît dans "Mes réservations"
+    await Reservation.create({
+      id_user: req.user.id,
+      id_event: event._id,
+      describe: "",
     });
 
     return res.status(201).json(event);
