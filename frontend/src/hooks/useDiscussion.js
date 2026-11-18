@@ -34,17 +34,32 @@ export default function useDiscussion(eventId) {
     const minuteries = new Map()
     const monId = user?._id
 
+    // Changement d'event (ou remount) : on repart à zéro pour ne pas mélanger les fils
+    setEtat('chargement')
+    setErreur('')
+    setEvent(null)
+    setMessages([])
+    setEncoreAvant(false)
+    setChargementAvant(false)
+    setConnecte(false)
+    setEcrivent({})
+
     // 1. L'historique d'abord (vérifie aussi que le user a accès à la discussion)
-    async function chargerDerniers() {
+    // initial=true : remplace l'état ; sinon (reconnexion) : fusionne sans toucher encoreAvant
+    async function chargerDerniers({ initial = false } = {}) {
       const donnees = await chargerMessages(token, eventId)
       if (!actif) return
       setEvent(donnees.event)
-      setMessages((liste) => fusionner(liste, donnees.messages))
-      setEncoreAvant((avant) => avant || donnees.encoreAvant)
+      if (initial) {
+        setMessages(fusionner([], donnees.messages))
+        setEncoreAvant(donnees.encoreAvant)
+      } else {
+        setMessages((liste) => fusionner(liste, donnees.messages))
+      }
       setEtat('pret')
     }
 
-    chargerDerniers()
+    chargerDerniers({ initial: true })
       .then(() => {
         if (!actif) return
         // 2. Puis le direct
