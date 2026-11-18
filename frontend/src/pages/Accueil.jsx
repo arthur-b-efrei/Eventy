@@ -190,7 +190,7 @@ export default function Accueil() {
   function rechercherAutour(nouvellePosition, nouveauRayon = rayon) {
     setLoading(true);
     setError("");
-    setPage(1);
+    majUrl({ page: 1 }); // la page est rangée dans l'URL (comme la recherche et le genre)
     setAutour(nouvellePosition);
     setRayon(nouveauRayon);
   }
