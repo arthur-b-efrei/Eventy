@@ -122,6 +122,7 @@ Chaque event a sa messagerie de groupe, ouverte avec le bouton « Discussion » 
 - **Comment ?** L'historique est chargé par l'API (`GET /api/events/:id/messages`), puis le direct passe par **Socket.IO** sur le même port que l'API (`backend/src/socket.js`). Le front envoie son token à la connexion : `io(url, { auth: { token } })`. Il est vérifié comme dans `protect`.
 - **Messages Socket.IO** : `rejoindre` (eventId), `message` ({ eventId, texte }, 500 caractères max), `ecrit` (« Léa écrit… », rien n'est enregistré), et côté serveur `discussion-fermee` (désinscription ou event supprimé).
 - **Anti-spam** : 5 messages maximum toutes les 5 secondes par connexion.
+- **Plusieurs backends sur la même base** (chaque dev lance le sien, ou plusieurs serveurs en production) : l'adaptateur MongoDB de Socket.IO (`@socket.io/mongo-adapter`) fait passer les messages de l'un à l'autre via la collection plafonnée `socketio_diffusions`. Il a besoin d'un replica set, ce qui est le cas sur Atlas ; sur un MongoDB local simple, un avertissement s'affiche au démarrage et les messages ne passent qu'entre clients du même backend.
 - **Suppression** : supprimer un event supprime sa discussion ; supprimer son compte supprime ses messages.
 - **Hébergement** : il faut un serveur Node qui reste allumé (Render, Railway, VPS…). Les hébergeurs « serverless » (Vercel, Netlify Functions) ne gardent pas les WebSockets ouverts.
 

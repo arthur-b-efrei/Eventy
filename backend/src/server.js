@@ -11,7 +11,7 @@ await connectDB();
 
 // Express et le WebSocket de la discussion partagent le même serveur (et donc le même port)
 const serveur = createServer(app);
-demarrerSocket(serveur);
+await demarrerSocket(serveur);
 
 serveur.listen(PORT, () => {
   console.log(`Serveur lancé sur http://localhost:${PORT}`);

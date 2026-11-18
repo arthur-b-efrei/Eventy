@@ -1,4 +1,5 @@
 import { Server } from "socket.io";
+import { createAdapter } from "@socket.io/mongo-adapter";
 import mongoose from "mongoose";
 import Message from "./models/Message.js";
 import User from "./models/User.js";
@@ -15,14 +16,51 @@ import {
 const LIMITE_MESSAGES = 5;
 const FENETRE_MS = 5000;
 
+// Collection MongoDB où les backends s'échangent les diffusions (voir brancherAdaptateur)
+const COLLECTION_ADAPTATEUR = "socketio_diffusions";
+
 let io = null;
 
-// Branche Socket.IO sur le serveur HTTP d'Express (même port que l'API)
-export function demarrerSocket(serveurHttp) {
+// Plusieurs backends branchés sur la même base (chaque dev lance le sien, ou plusieurs serveurs
+// en production) : sans adaptateur, un message n'est diffusé qu'aux personnes connectées au
+// MÊME backend que l'auteur, les autres ne le voient qu'en rechargeant la page.
+// L'adaptateur MongoDB de Socket.IO règle ça : chaque backend écrit ses diffusions dans une
+// collection, et lit en direct (change stream) celles des autres pour les relayer à ses clients.
+// Les change streams demandent un "replica set" : c'est le cas sur MongoDB Atlas.
+async function brancherAdaptateur() {
+  const db = mongoose.connection.db;
+  const infos = await db.admin().command({ hello: 1 });
+  if (!infos.setName && infos.msg !== "isdbgrid") {
+    console.warn(
+      "Discussion : MongoDB n'est pas un replica set, les messages ne passent qu'entre les clients d'un même backend."
+    );
+    return;
+  }
+
+  // Collection plafonnée (1 Mo) : les anciennes diffusions s'effacent toutes seules
+  try {
+    await db.createCollection(COLLECTION_ADAPTATEUR, { capped: true, size: 1e6 });
+  } catch {
+    // elle existe déjà
+  }
+  io.adapter(createAdapter(db.collection(COLLECTION_ADAPTATEUR)));
+  console.log("Discussion : diffusion partagée entre les backends via MongoDB");
+}
+
+// Branche Socket.IO sur le serveur HTTP d'Express (même port que l'API).
+// À appeler après connectDB() : l'adaptateur utilise la connexion MongoDB.
+export async function demarrerSocket(serveurHttp) {
   io = new Server(serveurHttp, {
     // Comme l'API (app.use(cors())) : on s'identifie avec le token, pas avec des cookies
     cors: { origin: "*" },
   });
+
+  try {
+    await brancherAdaptateur();
+  } catch (error) {
+    // La discussion marche quand même, mais seulement entre clients du même backend
+    console.error("Discussion : adaptateur MongoDB indisponible :", error.message);
+  }
 
   // 1. À la connexion, le front envoie son token : io(url, { auth: { token } })
   io.use(async (socket, next) => {

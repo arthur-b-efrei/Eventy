@@ -11,6 +11,7 @@
     "geocoder:events": "node src/scripts/geocoderEvents.js"
   },
   "dependencies": {
+    "@socket.io/mongo-adapter": "^0.4.0",
     "bcryptjs": "^3.0.3",
     "cors": "^2.8.6",
     "dotenv": "^18.0.10",
