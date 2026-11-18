@@ -17,7 +17,6 @@ function formaterReservation(reservation, userId) {
   const createurId = event.id_creator?.toString?.() || String(event.id_creator);
   return {
     _id: reservation._id,
-    describe: reservation.describe || "",
     createdAt: reservation.createdAt,
     estCreateur: createurId === userId,
     event: {
@@ -49,49 +48,6 @@ export async function listerMesReservations(req, res) {
   } catch (error) {
     console.error("listerMesReservations :", error.message);
     res.status(500).json({ message: "Impossible de charger tes réservations." });
-  }
-}
-
-// PATCH /api/reservations/:id — modifier le message (describe) de sa réservation
-export async function modifierReservation(req, res) {
-  try {
-    const { id } = req.params;
-    if (!idValide(id)) {
-      return res.status(400).json({ message: "Identifiant invalide" });
-    }
-
-    if (req.body.describe === undefined) {
-      return res.status(400).json({ message: "Le champ describe est obligatoire" });
-    }
-
-    if (typeof req.body.describe !== "string") {
-      return res.status(400).json({ message: "describe doit être une chaîne" });
-    }
-
-    const describe = req.body.describe.trim();
-    if (describe.length > 500) {
-      return res.status(400).json({ message: "Le message est trop long (500 caractères max)" });
-    }
-
-    // Champs inconnus refusés (contrat PATCH partiel strict)
-    const champs = Object.keys(req.body);
-    if (champs.some((champ) => champ !== "describe")) {
-      return res.status(400).json({ message: "Seul le champ describe peut être modifié" });
-    }
-
-    const reservation = await Reservation.findById(id);
-    if (!reservation || reservation.id_user.toString() !== req.user.id) {
-      return res.status(404).json({ message: "Réservation introuvable" });
-    }
-
-    reservation.describe = describe;
-    await reservation.save();
-
-    const complete = await Reservation.findById(reservation._id).populate("id_event").lean();
-    res.json(formaterReservation(complete, req.user.id));
-  } catch (error) {
-    console.error("modifierReservation :", error.message);
-    res.status(500).json({ message: "Impossible de modifier la réservation." });
   }
 }
 
@@ -234,7 +190,8 @@ export async function supprimerEvenement(req, res) {
   }
 }
 
-// GET /api/events/:id/inscrits — liste des inscrits (créateur uniquement, sinon 404)
+// GET /api/events/:id/inscrits — liste des participants (créateur et inscrits, sinon 404).
+// Les emails ne sont jamais renvoyés, même au créateur (vie privée des participants).
 export async function listerInscrits(req, res) {
   try {
     const { id } = req.params;
@@ -243,8 +200,11 @@ export async function listerInscrits(req, res) {
     }
 
     const event = await Event.findById(id).lean();
-    // Pas créateur → 404 (on ne révèle pas l'existence de l'event)
-    if (!event || event.id_creator.toString() !== req.user.id) {
+    // Accès : le créateur et les inscrits. Les autres → 404 (on ne révèle pas l'existence de l'event)
+    const estCreateur = Boolean(event) && event.id_creator.toString() === req.user.id;
+    const estInscrit =
+      Boolean(event) && !estCreateur && Boolean(await Reservation.exists({ id_user: req.user.id, id_event: id }));
+    if (!estCreateur && !estInscrit) {
       return res.status(404).json({ message: "Événement introuvable" });
     }
 
@@ -254,7 +214,7 @@ export async function listerInscrits(req, res) {
 
     const userIds = reservations.map((r) => r.id_user);
     const users = await User.find({ _id: { $in: userIds } })
-      .select("name email avatar")
+      .select("name avatar")
       .lean();
     const parId = new Map(users.map((u) => [u._id.toString(), u]));
 
@@ -262,13 +222,13 @@ export async function listerInscrits(req, res) {
       const user = parId.get(reservation.id_user.toString());
       return {
         _id: reservation._id,
-        describe: reservation.describe || "",
         createdAt: reservation.createdAt,
+        // Pour afficher le badge "Organisateur" dans la liste
+        estCreateur: reservation.id_user.toString() === event.id_creator.toString(),
         user: user
           ? {
               _id: user._id,
               name: user.name,
-              email: user.email,
               avatar: user.avatar,
             }
           : null,

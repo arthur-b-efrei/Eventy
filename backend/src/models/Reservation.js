@@ -15,8 +15,6 @@ const reservationSchema = new mongoose.Schema(
       ref: "Event",
       required: true,
     },
-    // Petit message du participant, modifiable (ex : "j'arrive vers 21h")
-    describe: { type: String, default: "" },
   },
   {
     // createdAt = date à laquelle le user s'est inscrit

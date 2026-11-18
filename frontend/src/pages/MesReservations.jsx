@@ -8,7 +8,6 @@ import {
   listerInscrits,
   listerMesReservations,
   modifierEvenement,
-  modifierReservation,
   supprimerEvenement,
 } from '../api/reservations.js'
 import { CHAMP, ERREUR, INPUT, LABEL } from '../components/ui.js'
@@ -33,7 +32,7 @@ function versInputDate(valeur) {
 }
 
 function PanneauInscrits({ eventId, ouvert }) {
-  const { token } = useAuth()
+  const { token, user: moi } = useAuth()
   const [items, setItems] = useState([])
   const [chargement, setChargement] = useState(false)
   const [erreur, setErreur] = useState('')
@@ -65,7 +64,9 @@ function PanneauInscrits({ eventId, ouvert }) {
 
   return (
     <div className="mt-4 border-t border-bordure pt-4">
-      <h3 className="font-titre text-lg tracking-[-0.02em]">Inscrits</h3>
+      <h3 className="font-titre text-lg tracking-[-0.02em]">
+        Participants{items.length > 0 ? ` (${items.length})` : ''}
+      </h3>
       {chargement ? <p className="mt-2 text-sm text-texte-doux">Chargement…</p> : null}
       {erreur ? <p className={`${ERREUR} mt-2`}>{erreur}</p> : null}
       {!chargement && !erreur && items.length === 0 ? (
@@ -81,13 +82,19 @@ function PanneauInscrits({ eventId, ouvert }) {
               <div className="flex items-center gap-3">
                 <Avatar user={item.user} taille={36} />
                 <div>
-                  <p className="font-bold">{item.user?.name || 'Utilisateur inconnu'}</p>
-                  <p className="text-sm text-texte-doux">{item.user?.email || '—'}</p>
+                  <p className="flex flex-wrap items-center gap-2 font-bold">
+                    {item.user?.name || 'Compte supprimé'}
+                    {item.user?._id && item.user._id === moi?._id ? (
+                      <span className="text-sm font-semibold text-texte-doux">(toi)</span>
+                    ) : null}
+                    {item.estCreateur ? (
+                      <span className="rounded-full bg-lampion/20 px-2 py-0.5 text-[11px] font-bold uppercase tracking-[0.04em] text-[#8a3d12]">
+                        Organisateur
+                      </span>
+                    ) : null}
+                  </p>
                 </div>
               </div>
-              {item.describe ? (
-                <p className="max-w-full text-sm text-texte-doux sm:max-w-[45%]">« {item.describe} »</p>
-              ) : null}
             </li>
           ))}
         </ul>
@@ -187,28 +194,12 @@ function FormulaireEvent({ event, onAnnuler, onSauve }) {
   )
 }
 
-function CarteReservation({ item, onMaj, onMajEvent, onSupprime, onSupprimeEvent }) {
+function CarteReservation({ item, onMajEvent, onSupprime, onSupprimeEvent }) {
   const { token } = useAuth()
-  const [message, setMessage] = useState(item.describe || '')
-  const [editionMessage, setEditionMessage] = useState(false)
   const [editionEvent, setEditionEvent] = useState(false)
   const [inscritsOuverts, setInscritsOuverts] = useState(false)
   const [action, setAction] = useState('')
   const [erreur, setErreur] = useState('')
-
-  async function sauverMessage() {
-    setErreur('')
-    setAction('patch')
-    try {
-      const maj = await modifierReservation(token, item._id, message)
-      onMaj(maj)
-      setEditionMessage(false)
-    } catch (err) {
-      setErreur(err.message)
-    } finally {
-      setAction('')
-    }
-  }
 
   async function annuler() {
     const ok = window.confirm('Annuler cette réservation ? Cette action est définitive.')
@@ -268,46 +259,6 @@ function CarteReservation({ item, onMaj, onMajEvent, onSupprime, onSupprimeEvent
 
       {event.describe ? <p className="mt-3 text-texte-doux">{event.describe}</p> : null}
 
-      <div className="mt-4">
-        <p className={LABEL}>Ton message</p>
-        {editionMessage ? (
-          <div className="mt-1.5 grid gap-2">
-            <textarea
-              className={`${INPUT} h-auto min-h-[88px] resize-y py-3`}
-              value={message}
-              maxLength={500}
-              onChange={(e) => setMessage(e.target.value)}
-              placeholder="Ex : j’arrive vers 21h"
-            />
-            <div className="flex flex-wrap gap-2">
-              <Bouton
-                variante="outremer"
-                className="min-h-10 px-4 text-sm"
-                disabled={action === 'patch'}
-                onClick={() => void sauverMessage()}
-              >
-                {action === 'patch' ? 'Enregistrement…' : 'Enregistrer'}
-              </Bouton>
-              <Bouton
-                variante="discret"
-                className="min-h-10 px-4 text-sm"
-                onClick={() => {
-                  setMessage(item.describe || '')
-                  setEditionMessage(false)
-                  setErreur('')
-                }}
-              >
-                Annuler
-              </Bouton>
-            </div>
-          </div>
-        ) : (
-          <p className="mt-1 text-texte-doux">
-            {item.describe?.trim() ? `« ${item.describe} »` : 'Aucun message pour l’instant.'}
-          </p>
-        )}
-      </div>
-
       {item.estCreateur && editionEvent ? (
         <FormulaireEvent
           event={event}
@@ -325,15 +276,6 @@ function CarteReservation({ item, onMaj, onMajEvent, onSupprime, onSupprimeEvent
         <Bouton variante="outremer" className="min-h-10 px-4 text-sm" to={`/evenements/${event._id}/discussion`}>
           Discussion
         </Bouton>
-        {!editionMessage ? (
-          <Bouton
-            variante="discret"
-            className="min-h-10 px-4 text-sm"
-            onClick={() => setEditionMessage(true)}
-          >
-            Modifier mon message
-          </Bouton>
-        ) : null}
         {item.estCreateur && !editionEvent ? (
           <Bouton
             variante="discret"
@@ -343,15 +285,14 @@ function CarteReservation({ item, onMaj, onMajEvent, onSupprime, onSupprimeEvent
             Modifier l’événement
           </Bouton>
         ) : null}
-        {item.estCreateur ? (
-          <Bouton
-            variante="discret"
-            className="min-h-10 px-4 text-sm"
-            onClick={() => setInscritsOuverts((v) => !v)}
-          >
-            {inscritsOuverts ? 'Masquer les inscrits' : 'Voir les inscrits'}
-          </Bouton>
-        ) : null}
+        <Bouton
+          variante="discret"
+          className="min-h-10 px-4 text-sm"
+          aria-expanded={inscritsOuverts}
+          onClick={() => setInscritsOuverts((v) => !v)}
+        >
+          {inscritsOuverts ? 'Masquer les participants' : 'Voir les participants'}
+        </Bouton>
         <Bouton
           variante="outremer"
           className="min-h-10 bg-grenadine! px-4 text-sm hover:bg-[#e94b68]!"
@@ -372,7 +313,8 @@ function CarteReservation({ item, onMaj, onMajEvent, onSupprime, onSupprimeEvent
         ) : null}
       </div>
 
-      {item.estCreateur ? <PanneauInscrits eventId={event._id} ouvert={inscritsOuverts} /> : null}
+      {/* Tous les participants peuvent voir la liste (prénom et avatar, jamais l'email) */}
+      <PanneauInscrits eventId={event._id} ouvert={inscritsOuverts} />
     </li>
   )
 }
@@ -405,8 +347,8 @@ export default function MesReservations() {
     <AppLayout>
       <h1 className="text-[clamp(28px,4.5vw,44px)]">Mes réservations</h1>
       <p className="mt-3 max-w-[40rem] text-texte-doux">
-        Retrouve les événements auxquels tu es inscrit·e, modifie ton message ou annule ta place.
-        Si tu es le créateur, tu peux aussi modifier ou supprimer l’événement et voir les inscrits.
+        Retrouve les événements auxquels tu es inscrit·e, discute avec les autres participants,
+        vois qui vient ou annule ta place. Si tu es le créateur, tu peux aussi modifier ou supprimer l’événement.
       </p>
 
       {erreur ? <p className={`${ERREUR} mt-5`}>{erreur}</p> : null}
@@ -426,9 +368,6 @@ export default function MesReservations() {
           <CarteReservation
             key={item._id}
             item={item}
-            onMaj={(maj) =>
-              setItems((prev) => prev.map((r) => (r._id === maj._id ? maj : r)))
-            }
             onMajEvent={(event) =>
               setItems((prev) =>
                 prev.map((r) =>

@@ -25,7 +25,7 @@ router.get("/", getEvents);
 // Créer un événement (connexion obligatoire)
 router.post("/", auth, createEvent);
 
-// Liste des inscrits : réservée au créateur de l'événement
+// Liste des participants : créateur et inscrits (prénom et avatar, jamais l'email)
 router.get("/:id/inscrits", auth, listerInscrits);
 
 // Modifier un événement : réservé au créateur

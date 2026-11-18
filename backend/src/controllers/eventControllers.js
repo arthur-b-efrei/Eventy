@@ -174,7 +174,6 @@ export async function createEvent(req, res) {
     await Reservation.create({
       id_user: req.user.id,
       id_event: event._id,
-      describe: "",
     });
 
     return res.status(201).json(event);
