@@ -1,5 +1,8 @@
 # Events à proximité (façon Too Good To Go)
 
+> **Implémenté** (étapes 1 à 5 ci-dessous ; la carte reste en option). Résumé dans le README, section « Events à proximité ».
+> URL vérifiée : `https://data.geopf.fr/geocodage/search` (avec `autocomplete=1` pour les suggestions, `type=municipality` pour les villes).
+
 Objectif : utiliser la position actuelle de l'utilisateur pour lui montrer les events autour de lui, du plus proche au plus loin (« à 650 m »).
 
 **Pas besoin d'une API cartographique.** Il faut 3 briques, et une seule appelle un service externe (gratuit) :

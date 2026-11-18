@@ -1,6 +1,24 @@
 
 import mongoose from "mongoose";
 
+// Coordonnées d'un lieu au format GeoJSON, celui que MongoDB comprend pour les recherches "à proximité".
+// Attention à l'ordre : [longitude, latitude] (le navigateur, lui, donne latitude puis longitude).
+const pointSchema = new mongoose.Schema(
+  {
+    type: { type: String, enum: ["Point"], required: true },
+    coordinates: {
+      type: [Number],
+      required: true,
+      validate: {
+        validator: ([lng, lat] = []) =>
+          Number.isFinite(lng) && Number.isFinite(lat) && Math.abs(lng) <= 180 && Math.abs(lat) <= 90,
+        message: "Coordonnées invalides.",
+      },
+    },
+  },
+  { _id: false }
+);
+
 // Un événement créé par un utilisateur
 const eventSchema = new mongoose.Schema(
   {
@@ -44,6 +62,13 @@ const eventSchema = new mongoose.Schema(
       type: String,
       required: [true, "La localisation est obligatoire."],
       trim: true,
+    },
+
+    // Coordonnées de "localisation", calculées par le serveur à la création (services/geocodage.js).
+    // Absent pour les anciens events non géocodés : voir "npm run geocoder:events".
+    position: {
+      type: pointSchema,
+      default: undefined,
     },
 
     // Date obligatoire
@@ -96,5 +121,9 @@ const eventSchema = new mongoose.Schema(
     timestamps: true,
   }
 );
+
+// Index géographique : obligatoire pour chercher les events proches ($geoNear).
+// Les events sans position sont simplement ignorés par la recherche.
+eventSchema.index({ position: "2dsphere" });
 
 export default mongoose.model("Event", eventSchema);

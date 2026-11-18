@@ -7,7 +7,8 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "node --watch-path=./src src/server.js",
-    "seed:reservations": "node src/scripts/seedReservations.js"
+    "seed:reservations": "node src/scripts/seedReservations.js",
+    "geocoder:events": "node src/scripts/geocoderEvents.js"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",

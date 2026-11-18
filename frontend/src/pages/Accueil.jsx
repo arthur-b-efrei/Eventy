@@ -7,6 +7,10 @@ import {
   WifiOff,
   RotateCw,
   CalendarPlus,
+  LocateFixed,
+  MapPin,
+  MapPinOff,
+  X,
 } from "lucide-react";
 
 import AppLayout from "../components/AppLayout.jsx";
@@ -16,6 +20,7 @@ import EventCard, {
 import EmptyState from "../components/ui/EmptyState.jsx";
 import Toast from "../components/Toast.jsx";
 import Bouton from "../components/Bouton.jsx";
+import ChampAdresse from "../components/ChampAdresse.jsx";
 import { ERREUR } from "../components/ui.js";
 
 import { useAuth } from "../context/AuthContext.js";
@@ -35,6 +40,13 @@ const GENRES = [
   "Gastronomie",
   "Autre",
 ];
+
+// Rayons proposés pour la recherche "autour de moi" (en mètres)
+const RAYONS = [2000, 5000, 10000, 25000];
+const enKm = (metres) => `${metres / 1000} km`;
+
+const primaryButton =
+  "inline-flex items-center justify-center gap-2 rounded-xl bg-violet-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-violet-700 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-violet-200 disabled:cursor-wait disabled:opacity-60";
 
 const secondaryButton =
   "inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:border-violet-300 hover:text-violet-700 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-violet-100";
@@ -88,6 +100,14 @@ export default function Accueil() {
   const [erreurInscription, setErreurInscription] = useState(""); // échec
   const finToast = useCallback(() => setToast(""), []);
 
+  // Recherche "autour de moi" : { lat, lng, label } ou null (= tous les événements)
+  const [autour, setAutour] = useState(null);
+  const [rayon, setRayon] = useState(10000);
+  // Localisation : "" | "recherche" (en cours) | "ville" (on demande une ville à la place)
+  const [geo, setGeo] = useState("");
+  const [messageGeo, setMessageGeo] = useState("");
+  const [ville, setVille] = useState("");
+
   // Ids des événements auxquels le user est déjà inscrit
   const [mesInscriptions, setMesInscriptions] = useState([]);
   // Id de l'événement dont l'inscription est en cours (pour bloquer le double clic)
@@ -135,6 +155,8 @@ export default function Accueil() {
           page,
           recherche: rechercheEnvoyee,
           genre,
+          // "Autour de moi" : la position est envoyée seulement pour cette recherche (jamais enregistrée)
+          position: autour ? { lat: autour.lat, lng: autour.lng, rayon } : null,
         });
 
         if (active) {
@@ -162,7 +184,60 @@ export default function Accueil() {
     return () => {
       active = false;
     };
-  }, [page, rechercheEnvoyee, genre, reloadKey]);
+  }, [page, rechercheEnvoyee, genre, reloadKey, autour, rayon]);
+
+  // Change la recherche (position et/ou rayon) : la liste se recharge, à partir de la page 1
+  function rechercherAutour(nouvellePosition, nouveauRayon = rayon) {
+    setLoading(true);
+    setError("");
+    majUrl({ page: 1 }); // la page est rangée dans l'URL (comme la recherche et le genre)
+    setAutour(nouvellePosition);
+    setRayon(nouveauRayon);
+  }
+
+  // Bouton "Autour de moi" : le navigateur demande l'autorisation à l'utilisateur
+  function localiser() {
+    setMessageGeo("");
+    if (!navigator.geolocation) {
+      setGeo("ville");
+      setMessageGeo("Ton navigateur ne permet pas la localisation. Choisis plutôt une ville :");
+      return;
+    }
+    setGeo("recherche");
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setGeo("");
+        // Le navigateur donne latitude puis longitude
+        rechercherAutour({
+          lat: pos.coords.latitude,
+          lng: pos.coords.longitude,
+          label: "ta position",
+        });
+      },
+      (err) => {
+        // Plan B : la ville
+        setGeo("ville");
+        setMessageGeo(
+          err.code === err.PERMISSION_DENIED
+            ? "Tu as refusé la localisation. Pas de souci, choisis plutôt une ville :"
+            : "Impossible de te localiser pour le moment. Choisis plutôt une ville :"
+        );
+      },
+      { enableHighAccuracy: false, timeout: 10000, maximumAge: 5 * 60 * 1000 }
+    );
+  }
+
+  function choisirVille(suggestion) {
+    setGeo("");
+    setVille("");
+    rechercherAutour({ lat: suggestion.lat, lng: suggestion.lng, label: suggestion.label });
+  }
+
+  function voirTout() {
+    setGeo("");
+    setMessageGeo("");
+    rechercherAutour(null);
+  }
 
   // Réessayer le chargement
   function reessayer() {
@@ -205,7 +280,8 @@ export default function Accueil() {
       // On remplace l'ancien événement par le nouveau dans la liste
       // -> la carte affiche tout de suite le bon nombre de places
       setEvents((liste) =>
-        liste.map((e) => (e._id === eventMaj._id ? eventMaj : e))
+        // On garde "distance" (calculée par la recherche autour de moi)
+        liste.map((e) => (e._id === eventMaj._id ? { ...e, ...eventMaj } : e))
       );
       // On note qu'on est inscrit -> le bouton passe à "Inscrit"
       setMesInscriptions((ids) => [...ids, eventMaj._id]);
@@ -273,6 +349,107 @@ export default function Accueil() {
             et trouve ta prochaine sortie.
           </p>
         </div>
+      </section>
+
+      {/* AUTOUR DE MOI */}
+      <section
+        className="mt-8 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5"
+        aria-label="Événements autour de moi"
+      >
+        {autour ? (
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <p className="flex items-center gap-2 text-sm text-slate-700">
+              <MapPin className="h-4 w-4 shrink-0 text-violet-600" aria-hidden="true" />
+              <span>
+                Autour de <strong className="text-slate-900">{autour.label}</strong>, à moins de
+              </span>
+            </p>
+            <div className="flex flex-wrap items-center gap-2">
+              {RAYONS.map((r) => (
+                <button
+                  key={r}
+                  type="button"
+                  onClick={() => r !== rayon && rechercherAutour(autour, r)}
+                  aria-pressed={rayon === r}
+                  className={`rounded-full border px-3.5 py-1.5 text-sm font-semibold transition ${
+                    rayon === r
+                      ? "border-violet-600 bg-violet-600 text-white"
+                      : "border-slate-200 bg-white text-slate-600 hover:border-violet-300 hover:text-violet-700"
+                  }`}
+                >
+                  {enKm(r)}
+                </button>
+              ))}
+              <button
+                type="button"
+                onClick={voirTout}
+                className="inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-sm font-semibold text-slate-500 transition hover:bg-slate-100 hover:text-slate-800"
+              >
+                <X className="h-4 w-4" aria-hidden="true" />
+                Tous les événements
+              </button>
+            </div>
+          </div>
+        ) : (
+          <>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="font-semibold text-slate-900">Des plans près de chez toi ?</p>
+                <p className="mt-0.5 text-sm text-slate-500">
+                  Ta position sert seulement à trier les événements par distance : elle n'est jamais enregistrée.
+                </p>
+              </div>
+              <div className="flex shrink-0 flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={localiser}
+                  disabled={geo === "recherche"}
+                  className={primaryButton}
+                >
+                  <LocateFixed className="h-4 w-4" aria-hidden="true" />
+                  {geo === "recherche" ? "Localisation…" : "Autour de moi"}
+                </button>
+                {geo !== "ville" && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMessageGeo("");
+                      setGeo("ville");
+                    }}
+                    className="px-2 py-3 text-sm font-semibold text-violet-700 underline-offset-4 hover:underline"
+                  >
+                    ou choisir une ville
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Plan B : saisir une ville (si la localisation est refusée, ou au choix) */}
+            {geo === "ville" && (
+              <div className="mt-4 max-w-md">
+                {messageGeo && (
+                  <p className="mb-2 flex items-start gap-2 text-sm text-slate-600">
+                    <MapPinOff className="mt-0.5 h-4 w-4 shrink-0 text-slate-400" aria-hidden="true" />
+                    {messageGeo}
+                  </p>
+                )}
+                <label htmlFor="ville" className="sr-only">
+                  Ta ville
+                </label>
+                <ChampAdresse
+                  id="ville"
+                  type="ville"
+                  value={ville}
+                  onChange={setVille}
+                  onChoisir={choisirVille}
+                  placeholder="Ta ville (ex : Lyon)"
+                  autoFocus
+                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-violet-400 focus:ring-4 focus:ring-violet-100"
+                />
+              </div>
+            )}
+          </>
+        )}
       </section>
 
       {/* BARRE DE RECHERCHE (reste affichée pendant le chargement, pour ne pas perdre ce qu'on tape) */}
@@ -361,8 +538,32 @@ export default function Accueil() {
           </EmptyState>
         )}
 
+        {/* Aucun événement autour (pas d'autre filtre actif) */}
+        {!loading && !error && total === 0 && autour && !filtresActifs && (
+          <EmptyState
+            icon={MapPinOff}
+            title={`Aucun événement à moins de ${enKm(rayon)}`}
+            description="Élargis la zone de recherche, ou regarde tous les événements."
+          >
+            <div className="flex flex-wrap justify-center gap-2">
+              {rayon < RAYONS[RAYONS.length - 1] && (
+                <button
+                  type="button"
+                  onClick={() => rechercherAutour(autour, RAYONS.find((r) => r > rayon))}
+                  className={secondaryButton}
+                >
+                  Chercher à {enKm(RAYONS.find((r) => r > rayon))}
+                </button>
+              )}
+              <button type="button" onClick={voirTout} className={secondaryButton}>
+                Tous les événements
+              </button>
+            </div>
+          </EmptyState>
+        )}
+
         {/* Aucun événement du tout (pas de filtre actif) */}
-        {!loading && !error && total === 0 && !filtresActifs && (
+        {!loading && !error && total === 0 && !filtresActifs && !autour && (
           <EmptyState
             icon={CalendarPlus}
             title="Aucun événement pour le moment"
