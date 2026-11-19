@@ -274,8 +274,8 @@ function ModaleMotDePasse({ ouvert, onFermer, onReussite }) {
 
   function changer(e) {
     e.preventDefault()
-    if (nouveau.length < 6) {
-      setErreur('Le nouveau mot de passe doit faire au moins 6 caractères.')
+    if (nouveau.length < 8) {
+      setErreur('Le nouveau mot de passe doit faire au moins 8 caractères.')
       return
     }
     if (nouveau !== confirmation) {
@@ -294,8 +294,8 @@ function ModaleMotDePasse({ ouvert, onFermer, onReussite }) {
     <Modal ouvert={ouvert} onFermer={fermer} titre="Changer de mot de passe" description="Tu resteras connectée ici. Tes autres appareils seront déconnectés." icone={<IconeCadenas />}>
       <form className={FORMULAIRE} onSubmit={changer}>
         {blocErreur}
-        <ChampMotDePasse id="ancien" label="Mot de passe actuel" value={ancien} onChange={(e) => setAncien(e.target.value)} autoComplete="current-password" />
-        <ChampMotDePasse id="nouveau" label="Nouveau mot de passe" value={nouveau} onChange={(e) => setNouveau(e.target.value)} autoComplete="new-password" aide="6 caractères minimum." />
+        <ChampMotDePasse id="ancien" label="Mot de passe actuel" value={ancien} onChange={(e) => setAncien(e.target.value)} autoComplete="current-password" minLength={0} />
+        <ChampMotDePasse id="nouveau" label="Nouveau mot de passe" value={nouveau} onChange={(e) => setNouveau(e.target.value)} autoComplete="new-password" aide="8 caractères minimum." />
         <ChampMotDePasse id="confirmation" label="Confirme le nouveau mot de passe" value={confirmation} onChange={(e) => setConfirmation(e.target.value)} autoComplete="new-password" />
         <PiedModal>
           <Bouton variante="discret" onClick={fermer} disabled={chargement}>
@@ -342,7 +342,7 @@ function ModaleSuppression({ ouvert, onFermer }) {
             </li>
           ))}
         </ul>
-        <ChampMotDePasse id="mdp-suppression" label="Tape ton mot de passe pour confirmer" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" />
+        <ChampMotDePasse id="mdp-suppression" label="Tape ton mot de passe pour confirmer" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" minLength={0} />
         <PiedModal>
           <Bouton variante="discret" onClick={fermer} disabled={chargement}>
             Annuler

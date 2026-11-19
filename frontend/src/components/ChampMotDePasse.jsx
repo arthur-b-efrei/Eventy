@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { AIDE, CHAMP, INPUT, LABEL } from './ui.js'
 
 // Champ mot de passe avec un bouton pour l'afficher ou le cacher
-export default function ChampMotDePasse({ id, label, value, onChange, autoComplete, aide }) {
+export default function ChampMotDePasse({ id, label, value, onChange, autoComplete, aide, minLength = 8 }) {
   const [visible, setVisible] = useState(false)
 
   return (
@@ -19,7 +19,7 @@ export default function ChampMotDePasse({ id, label, value, onChange, autoComple
           onChange={onChange}
           autoComplete={autoComplete}
           required
-          minLength={6}
+          {...(minLength ? { minLength } : {})}
           className={`${INPUT} pr-[90px]!`}
         />
         <button

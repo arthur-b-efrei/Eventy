@@ -22,8 +22,8 @@ export default function Inscription() {
     e.preventDefault()
     setErreur('')
 
-    if (form.password.length < 6) {
-      setErreur('Le mot de passe doit faire au moins 6 caractères.')
+    if (form.password.length < 8) {
+      setErreur('Le mot de passe doit faire au moins 8 caractères.')
       return
     }
     const erreurDate = erreurDateNaissance(form.date_naissance)
@@ -95,7 +95,7 @@ export default function Inscription() {
           value={form.password}
           onChange={changer}
           autoComplete="new-password"
-          aide="6 caractères minimum."
+          aide="8 caractères minimum."
         />
 
         <Bouton type="submit" variante="lampion" className="mt-1.5 w-full" disabled={chargement}>

@@ -57,8 +57,8 @@ export default function MotDePasseOublie() {
       setErreur('Tape les 6 chiffres du code.')
       return
     }
-    if (password.length < 6) {
-      setErreur('Le mot de passe doit faire au moins 6 caractères.')
+    if (password.length < 8) {
+      setErreur('Le mot de passe doit faire au moins 8 caractères.')
       return
     }
 
@@ -149,7 +149,7 @@ export default function MotDePasseOublie() {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           autoComplete="new-password"
-          aide="6 caractères minimum."
+          aide="8 caractères minimum."
         />
         <Bouton type="submit" variante="outremer" className="mt-1.5 w-full" disabled={chargement}>
           {chargement ? 'Enregistrement…' : 'Changer mon mot de passe'}

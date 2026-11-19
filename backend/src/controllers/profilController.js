@@ -57,8 +57,8 @@ export async function changerMotDePasse(req, res) {
     if (!ancien || !nouveau) {
       return res.status(400).json({ message: "Remplis l'ancien et le nouveau mot de passe" });
     }
-    if (nouveau.length < 6) {
-      return res.status(400).json({ message: "Le nouveau mot de passe doit faire au moins 6 caractères" });
+    if (nouveau.length < 8) {
+      return res.status(400).json({ message: "Le nouveau mot de passe doit faire au moins 8 caractères" });
     }
 
     const user = await User.findById(req.user.id);

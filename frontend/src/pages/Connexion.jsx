@@ -79,6 +79,7 @@ export default function Connexion() {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           autoComplete="current-password"
+          minLength={0}
         />
         <Link to="/mot-de-passe-oublie" state={{ email }} className="-mt-2 justify-self-end text-sm font-bold">
           Mot de passe oublié ?

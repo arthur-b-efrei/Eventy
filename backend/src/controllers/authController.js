@@ -19,10 +19,10 @@ export async function register(req, res) {
     if (!name || !email || !password || !date_naissance) {
       return res.status(400).json({ message: "Tous les champs sont obligatoires" });
     }
-    if (password.length < 6) {
+    if (password.length < 8) {
       return res
         .status(400)
-        .json({ message: "Le mot de passe doit faire au moins 6 caractères" });
+        .json({ message: "Le mot de passe doit faire au moins 8 caractères" });
     }
     // On vérifie l'âge côté serveur : le formulaire seul peut être contourné
     const erreurDate = erreurDateNaissance(date_naissance);
@@ -153,8 +153,8 @@ export async function resetPassword(req, res) {
     if (!email || !/^\d{6}$/.test(String(code))) {
       return res.status(400).json({ message: "Le code doit contenir 6 chiffres" });
     }
-    if (!password || password.length < 6) {
-      return res.status(400).json({ message: "Le mot de passe doit faire au moins 6 caractères" });
+    if (!password || password.length < 8) {
+      return res.status(400).json({ message: "Le mot de passe doit faire au moins 8 caractères" });
     }
 
     const user = await User.findOne({ email: email.trim().toLowerCase() });
