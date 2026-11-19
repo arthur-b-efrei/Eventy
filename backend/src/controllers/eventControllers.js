@@ -80,21 +80,27 @@ function validateEventData({
       "Veuillez sélectionner un genre valide.";
   }
 
-  // Image FACULTATIVE
-  // Vérifier l'URL uniquement si une image est fournie
+  // Image FACULTATIVE : data URL (upload PC) ou URL http(s) (anciens events)
   if (image !== undefined && image !== null) {
     if (typeof image !== "string") {
-      errors.image = "L'image doit être une URL valide.";
+      errors.image = "L'image est invalide.";
     } else if (image.trim()) {
-      try {
-        const url = new URL(image.trim());
-
-        if (!["http:", "https:"].includes(url.protocol)) {
-          errors.image =
-            "L'image doit utiliser une URL HTTP ou HTTPS.";
+      const valeur = image.trim();
+      const dataUrl = /^data:(image\/(?:jpeg|png|webp));base64,([A-Za-z0-9+/=]+)$/.exec(valeur);
+      if (dataUrl) {
+        const octets = Buffer.from(dataUrl[2], "base64");
+        if (octets.length > 700 * 1024) {
+          errors.image = "Image trop lourde (700 Ko maximum après compression).";
         }
-      } catch {
-        errors.image = "L'URL de l'image est invalide.";
+      } else {
+        try {
+          const url = new URL(valeur);
+          if (!["http:", "https:"].includes(url.protocol)) {
+            errors.image = "L'image doit être un fichier ou une URL HTTP/HTTPS.";
+          }
+        } catch {
+          errors.image = "L'image est invalide.";
+        }
       }
     }
   }

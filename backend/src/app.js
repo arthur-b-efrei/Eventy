@@ -14,8 +14,8 @@ const app = express();
 // Autoriser les requêtes du frontend
 app.use(cors());
 
-// Lire les données JSON
-app.use(express.json());
+// Lire les données JSON (1 Mo : laisse passer une image d'événement compressée en data URL)
+app.use(express.json({ limit: "1mb" }));
 
 // Route de test
 app.get("/api/health", (req, res) => {

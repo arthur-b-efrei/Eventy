@@ -96,26 +96,28 @@ const eventSchema = new mongoose.Schema(
       },
     },
 
-    // URL de l'image obligatoire
+    // Image facultative : URL http(s) (anciens events) ou data URL JPEG/PNG/WebP (upload PC)
     image: {
-  type: String,
-  required: false,
-  default: "",
-  trim: true,
-  validate: {
-    validator(value) {
-      if (!value) return true;
-
-      try {
-        const url = new URL(value);
-        return ["http:", "https:"].includes(url.protocol);
-      } catch {
-        return false;
-      }
+      type: String,
+      required: false,
+      default: "",
+      trim: true,
+      validate: {
+        validator(value) {
+          if (!value) return true;
+          if (/^data:image\/(?:jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(value)) {
+            return true;
+          }
+          try {
+            const url = new URL(value);
+            return ["http:", "https:"].includes(url.protocol);
+          } catch {
+            return false;
+          }
+        },
+        message: "L'image est invalide.",
+      },
     },
-    message: "L'URL de l'image est invalide.",
-  },
-},
   },
   {
     timestamps: true,
